@@ -229,6 +229,39 @@ final class BackupServiceTest extends TestCase
         }
     }
 
+    public function testRestoreRejectsValidSqliteFileMissingRequiredTablesBeforeOverwritingActiveDatabase(): void
+    {
+        $pdo = Connection::getPdo();
+        $pdo->exec("INSERT INTO leads (name, email) VALUES ('Lead Seguro', 'seguro@teste.com')");
+
+        $service = new BackupService(
+            dbPath: $this->dbPath,
+            backupDir: $this->backupDir,
+            logPath: $this->logPath
+        );
+        $completeBackup = $service->createBackup(autoRotate: false);
+        $incompleteFile = $this->backupDir . DIRECTORY_SEPARATOR . 'incomplete.sqlite';
+        copy($completeBackup['path'], $incompleteFile);
+        $incompletePdo = new PDO("sqlite:{$incompleteFile}");
+        $incompletePdo->exec('DROP TABLE import_source_rows;');
+        unset($incompletePdo);
+
+        $verification = $service->verifyBackup($incompleteFile);
+        $this->assertFalse($verification['valid']);
+        $this->assertContains('import_source_rows', $verification['missing_tables']);
+
+        try {
+            $service->restoreBackup($incompleteFile);
+            $this->fail('A restauração deveria rejeitar um SQLite sem as tabelas essenciais.');
+        } catch (RuntimeException) {
+            $currentPdo = Connection::getPdo();
+            $this->assertSame(
+                1,
+                (int)$currentPdo->query("SELECT COUNT(*) FROM leads WHERE email = 'seguro@teste.com'")->fetchColumn()
+            );
+        }
+    }
+
     public function testRestoreAbortsWhenSafetySnapshotCannotBeCreated(): void
     {
         $pdo = Connection::getPdo();

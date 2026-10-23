@@ -296,6 +296,7 @@ final class BackupService
      *     tables_count: int,
      *     users_count: int,
      *     leads_count: int,
+     *     missing_tables: list<string>,
      *     error?: string
      * }
      */
@@ -310,6 +311,7 @@ final class BackupService
                 'tables_count' => 0,
                 'users_count' => 0,
                 'leads_count' => 0,
+                'missing_tables' => [],
                 'error' => "Arquivo não encontrado: {$backupPath}",
             ];
         }
@@ -342,6 +344,18 @@ final class BackupService
             $tablesStmt = $pdo->query("SELECT count(*) FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';");
             $tablesCount = (int)$tablesStmt->fetchColumn();
 
+            // Keep restore preflight aligned with the current migrated schema and restore drill.
+            $requiredTables = [
+                'roles', 'users', 'sessions', 'audit_logs', 'leads',
+                'properties', 'lead_properties', 'lead_interactions',
+                'lead_assignments', 'lead_follow_ups', 'import_batches',
+                'signboards', 'signboard_movements', 'owners',
+                'owner_properties', 'whatsapp_contact_logs', 'import_source_rows',
+            ];
+            $presentTables = $pdo->query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';")
+                ->fetchAll(PDO::FETCH_COLUMN);
+            $missingTables = array_values(array_diff($requiredTables, $presentTables));
+
             // 5. Contagem de usuários e leads
             $usersCount = 0;
             $hasUsers = $pdo->query("SELECT 1 FROM sqlite_master WHERE type='table' AND name='users';")->fetch();
@@ -355,7 +369,7 @@ final class BackupService
                 $leadsCount = (int)$pdo->query('SELECT COUNT(*) FROM leads;')->fetchColumn();
             }
 
-            $isValid = ($integrity === 'ok' && $quickCheck === 'ok' && $fkCheck === 'ok' && $tablesCount >= 3);
+            $isValid = ($integrity === 'ok' && $quickCheck === 'ok' && $fkCheck === 'ok' && $missingTables === []);
 
             return [
                 'valid' => $isValid,
@@ -365,6 +379,8 @@ final class BackupService
                 'tables_count' => $tablesCount,
                 'users_count' => $usersCount,
                 'leads_count' => $leadsCount,
+                'missing_tables' => $missingTables,
+                ...($missingTables !== [] ? ['error' => 'Tabelas essenciais ausentes: ' . implode(', ', $missingTables)] : []),
             ];
         } catch (Throwable $e) {
             return [
@@ -375,6 +391,7 @@ final class BackupService
                 'tables_count' => 0,
                 'users_count' => 0,
                 'leads_count' => 0,
+                'missing_tables' => [],
                 'error' => $e->getMessage(),
             ];
         }

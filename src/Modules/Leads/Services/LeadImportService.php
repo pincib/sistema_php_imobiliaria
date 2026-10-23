@@ -475,6 +475,7 @@ final class LeadImportService
             $skippedCount = 0;
             $errorCount = 0;
             $errors = [];
+            $limitExceeded = false;
 
             // Statements preparados para máxima performance e segurança
             $stmtInsertLead = $pdo->prepare('
@@ -517,6 +518,7 @@ final class LeadImportService
 
                 $totalRows++;
                 if ($totalRows > self::MAX_ROWS) {
+                    $limitExceeded = true;
                     break;
                 }
 
@@ -613,6 +615,13 @@ final class LeadImportService
             }
 
             fclose($handle);
+
+            if ($limitExceeded) {
+                throw new InvalidArgumentException(sprintf(
+                    'Limite excedido: a planilha possui mais de %d linhas.',
+                    self::MAX_ROWS
+                ));
+            }
 
             // Atualiza o lote com contagens consolidadas e status de conclusão
             $summary = [

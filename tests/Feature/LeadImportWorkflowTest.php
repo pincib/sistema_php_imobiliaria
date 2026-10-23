@@ -193,6 +193,100 @@ final class LeadImportWorkflowTest extends TestCase
         $this->assertStringContainsString($batch['batch_code'], $resultBody);
     }
 
+    public function testExplicitDatasetSupportsAlternativePropertyHeaders(): void
+    {
+        $this->authenticateAs(1, 'Gestor Imobiliária', 'admin', 'Administrador');
+        $csrfToken = Csrf::getToken();
+        $file = $this->createUploadedFile("Código legado;Categoria;Endereço\nIM-777;Casa;Rua das Flores, 10\n", 'imoveis_legado.csv');
+
+        $upload = (new ServerRequestFactory())->createServerRequest('POST', '/leads/import/upload')
+            ->withUploadedFiles(['file' => $file])
+            ->withParsedBody(['_csrf_token' => $csrfToken, 'dataset' => 'properties']);
+        $response = $this->app->handle($upload);
+
+        $this->assertSame(302, $response->getStatusCode());
+        $this->assertNull($_SESSION['import_staging']['detected_dataset']);
+        $this->assertSame('properties', $_SESSION['import_staging']['dataset']);
+
+        $validate = (new ServerRequestFactory())->createServerRequest('POST', '/leads/import/validate')
+            ->withParsedBody([
+                '_csrf_token' => $csrfToken,
+                'mapping' => ['code' => 0, 'type' => 1, 'address' => 2],
+            ]);
+        $this->app->handle($validate);
+
+        $this->assertSame('properties', $_SESSION['import_staging']['validation']['kind']);
+        $this->assertSame(1, $_SESSION['import_staging']['validation']['new_count']);
+        $this->assertSame(0, $_SESSION['import_staging']['validation']['error_count']);
+        $this->assertSame(0, (int)$this->pdo->query("SELECT COUNT(*) FROM properties WHERE code = 'IM-777'")->fetchColumn(), 'Dry-run must not persist properties.');
+    }
+
+    public function testExplicitDatasetSupportsAlternativeOwnerHeaders(): void
+    {
+        $this->authenticateAs(1, 'Gestor Imobiliária', 'admin', 'Administrador');
+        $csrfToken = Csrf::getToken();
+        $file = $this->createUploadedFile("Proprietário;Referência do cadastro\nAna Souza;AP101\n", 'proprietarios_legado.csv');
+
+        $upload = (new ServerRequestFactory())->createServerRequest('POST', '/leads/import/upload')
+            ->withUploadedFiles(['file' => $file])
+            ->withParsedBody(['_csrf_token' => $csrfToken, 'dataset' => 'owners']);
+        $this->app->handle($upload);
+
+        $validate = (new ServerRequestFactory())->createServerRequest('POST', '/leads/import/validate')
+            ->withParsedBody([
+                '_csrf_token' => $csrfToken,
+                'mapping' => ['name' => 0, 'property_code' => 1],
+            ]);
+        $this->app->handle($validate);
+
+        $this->assertSame('owners', $_SESSION['import_staging']['dataset']);
+        $this->assertSame('owners', $_SESSION['import_staging']['validation']['kind']);
+        $this->assertSame(1, $_SESSION['import_staging']['validation']['new_count']);
+        $this->assertSame(0, $_SESSION['import_staging']['validation']['error_count']);
+        $this->assertSame(0, (int)$this->pdo->query("SELECT COUNT(*) FROM owners WHERE name = 'Ana Souza'")->fetchColumn(), 'Dry-run must not persist owners.');
+    }
+
+    public function testRequiredMappingIsValidatedOnTheServer(): void
+    {
+        $this->authenticateAs(1, 'Gestor Imobiliária', 'admin', 'Administrador');
+        $csrfToken = Csrf::getToken();
+        $file = $this->createUploadedFile("Código legado;Categoria;Endereço\nIM-778;Casa;Rua das Flores, 11\n", 'imoveis_legado.csv');
+
+        $upload = (new ServerRequestFactory())->createServerRequest('POST', '/leads/import/upload')
+            ->withUploadedFiles(['file' => $file])
+            ->withParsedBody(['_csrf_token' => $csrfToken, 'dataset' => 'properties']);
+        $this->app->handle($upload);
+
+        $validate = (new ServerRequestFactory())->createServerRequest('POST', '/leads/import/validate')
+            ->withParsedBody([
+                '_csrf_token' => $csrfToken,
+                'mapping' => ['type' => 1, 'address' => 2],
+            ]);
+        $this->app->handle($validate);
+
+        $this->assertSame(2, $_SESSION['import_staging']['step']);
+        $this->assertNull($_SESSION['import_staging']['validation']);
+        $this->assertSame(0, (int)$this->pdo->query("SELECT COUNT(*) FROM properties WHERE code = 'IM-778'")->fetchColumn());
+    }
+
+    public function testAutomaticDetectionRejectsUnrecognizedHeaders(): void
+    {
+        $this->authenticateAs(1, 'Gestor Imobiliária', 'admin', 'Administrador');
+        $csrfToken = Csrf::getToken();
+        $file = $this->createUploadedFile("Identificador;Categoria;Local\nX-1;Casa;Rua A\n", 'dados.csv');
+
+        $upload = (new ServerRequestFactory())->createServerRequest('POST', '/leads/import/upload')
+            ->withUploadedFiles(['file' => $file])
+            ->withParsedBody(['_csrf_token' => $csrfToken, 'dataset' => 'auto']);
+        $response = $this->app->handle($upload);
+
+        $this->assertSame(302, $response->getStatusCode());
+        $this->assertArrayNotHasKey('import_staging', $_SESSION);
+
+        $page = $this->app->handle((new ServerRequestFactory())->createServerRequest('GET', '/leads/import'));
+        $this->assertStringContainsString('escolha contatos, imóveis ou proprietários', (string)$page->getBody());
+    }
+
     public function testCancelFlowDiscardsStagingFile(): void
     {
         $this->authenticateAs(1, 'Gestor Imobiliária', 'admin', 'Administrador');

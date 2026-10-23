@@ -298,4 +298,29 @@ final class LeadImportServiceTest extends TestCase
         $this->assertTrue($cancelled);
         $this->assertFileDoesNotExist($stagingPath);
     }
+
+    public function testExecuteImportRejectsFilesAboveRowLimitWithoutPartialWrites(): void
+    {
+        $rows = ["Nome;Telefone"];
+        for ($i = 1; $i <= LeadImportService::MAX_ROWS + 1; $i++) {
+            $rows[] = "Lead {$i};219" . str_pad((string)$i, 8, '0', STR_PAD_LEFT);
+        }
+
+        $staged = $this->service->stageUpload($this->createUploadedFile(implode("\n", $rows)));
+
+        try {
+            $this->service->executeImport(
+                $staged['staging_id'],
+                ['name' => 0, 'phone' => 1],
+                LeadImportService::POLICY_MERGE,
+                actorUserId: 1
+            );
+            $this->fail('A importação deveria rejeitar mais de 5.000 linhas sem gravar um lote parcial.');
+        } catch (InvalidArgumentException $exception) {
+            $this->assertStringContainsString('5000', $exception->getMessage());
+        }
+
+        $this->assertSame(0, (int)$this->pdo->query('SELECT COUNT(*) FROM leads')->fetchColumn());
+        $this->assertSame(0, (int)$this->pdo->query('SELECT COUNT(*) FROM import_batches')->fetchColumn());
+    }
 }

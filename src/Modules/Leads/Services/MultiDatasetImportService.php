@@ -20,12 +20,18 @@ final class MultiDatasetImportService
     public function __construct(?PDO $pdo = null, ?ImportBatchRepository $batches = null)
     { $this->pdo = $pdo ?? Connection::getPdo(); $this->batches = $batches ?? new ImportBatchRepository($this->pdo); }
 
-    public function detect(array $headers): string
+    public function detect(array $headers): ?string
     {
         $h = array_map(static fn($v) => mb_strtolower(trim((string)$v)), $headers);
         if (in_array('ref.', $h, true) && in_array('logradouro', $h, true)) return 'properties';
         if (in_array('ref. imóvel', $h, true) && in_array('telefones', $h, true)) return 'owners';
-        return 'leads';
+        foreach ($h as $header) {
+            if (preg_match('/^(nome|name|cliente|contato|lead|first name)$/u', $header)
+                || preg_match('/(telefone|celular|fone|tel|phone|whatsapp|zap|e-?mail|correio|origem|source|canal|notas|notes)/u', $header)) {
+                return 'leads';
+            }
+        }
+        return null;
     }
 
     public function suggestedMapping(array $headers, string $kind): array

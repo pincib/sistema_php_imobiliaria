@@ -95,6 +95,14 @@ $lastResult = $lastResult ?? ($_SESSION['last_import_result'] ?? null);
                             <option value="contacts_filtrados.csv">contacts_filtrados.csv — Contatos / leads</option>
                         </select>
                     </label>
+                    <label for="bundled-dataset">Tipo dos dados
+                        <select id="bundled-dataset" name="dataset" required>
+                            <option value="auto">Detectar pelos cabeçalhos</option>
+                            <option value="leads">Contatos / leads</option>
+                            <option value="properties">Imóveis</option>
+                            <option value="owners">Proprietários</option>
+                        </select>
+                    </label>
                     <button type="submit" class="outline secondary" style="margin:0">Preparar prévia desta fonte</button>
                 </div>
             </form>
@@ -102,6 +110,16 @@ $lastResult = $lastResult ?? ($_SESSION['last_import_result'] ?? null);
             <form action="/leads/import/upload" method="POST" enctype="multipart/form-data">
                 <?= $csrfField ?>
                 <p style="margin:1rem 0 .75rem;color:var(--pico-muted-color)">Ou envie outro arquivo CSV:</p>
+
+                <label for="upload-dataset">Tipo dos dados
+                    <select id="upload-dataset" name="dataset" required>
+                        <option value="auto">Detectar pelos cabeçalhos</option>
+                        <option value="leads">Contatos / leads</option>
+                        <option value="properties">Imóveis</option>
+                        <option value="owners">Proprietários</option>
+                    </select>
+                    <small>Se os cabeçalhos não forem reconhecidos, escolha aqui o tipo correto para receber o mapeamento correspondente.</small>
+                </label>
 
                 <div style="border: 2px dashed var(--pico-muted-border-color); border-radius: 8px; padding: 2.5rem 1.5rem; text-align: center; margin-bottom: 1.5rem; background: var(--pico-card-sectioning-background-color);">
                     <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--pico-primary); margin-bottom: 1rem;">
@@ -211,6 +229,15 @@ $lastResult = $lastResult ?? ($_SESSION['last_import_result'] ?? null);
 
         <form action="/leads/import/validate" method="POST">
             <?= $csrfField ?>
+
+            <p role="status" style="margin-bottom:1.25rem">
+                Tipo selecionado: <strong><?= ($staging['dataset'] ?? 'leads') === 'properties' ? 'Imóveis' : (($staging['dataset'] ?? '') === 'owners' ? 'Proprietários' : 'Contatos / leads') ?></strong>.
+                <?php if (!empty($staging['dataset_was_selected']) && ($staging['detected_dataset'] ?? null) === null): ?>
+                    Os cabeçalhos não permitiram detecção automática; foi aplicado o tipo escolhido manualmente.
+                <?php elseif (!empty($staging['dataset_was_selected']) && $staging['detected_dataset'] !== $staging['dataset']): ?>
+                    A detecção pelos cabeçalhos sugeriu <?= ($staging['detected_dataset'] ?? '') === 'properties' ? 'imóveis' : (($staging['detected_dataset'] ?? '') === 'owners' ? 'proprietários' : 'contatos / leads') ?>; foi aplicada sua escolha manual.
+                <?php endif; ?>
+            </p>
 
             <section style="margin-bottom: 2rem;">
                 <h3 style="font-size: 1rem; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--pico-muted-color);">

@@ -9,7 +9,7 @@ Este documento contém o procedimento técnico detalhado para restauração de e
 O processo de restauração da Plataforma Pinciara segue princípios de tolerância a falhas para impedir perda acidental de dados:
 
 1. **Validação Prévia do Arquivo (Pre-flight Check):**  
-   Antes de tocar no banco de dados ativo, o script abre o arquivo de backup e valida se ele é um banco SQLite válido, executa `PRAGMA integrity_check`, `PRAGMA quick_check`, confere integridade referencial (`PRAGMA foreign_key_check`) e verifica a presença das tabelas vitais (`users`, `roles`, `leads`, `lead_interactions`, `lead_follow_ups`, etc.).
+   Antes de tocar no banco de dados ativo, o script abre o arquivo de backup e valida se ele é um banco SQLite válido, executa `PRAGMA integrity_check`, `PRAGMA quick_check`, confere integridade referencial (`PRAGMA foreign_key_check`) e verifica todas as 17 tabelas da aplicação: `roles`, `users`, `sessions`, `audit_logs`, `leads`, `properties`, `lead_properties`, `lead_assignments`, `lead_interactions`, `lead_follow_ups`, `import_batches`, `signboards`, `signboard_movements`, `owners`, `owner_properties`, `whatsapp_contact_logs` e `import_source_rows`.
 2. **Snapshot de Segurança Automático:**  
    Antes de sobrescrever o banco ativo, o sistema cria automaticamente uma cópia de segurança do banco corrente com o prefixo `pre_restore_YYYY-MM-DD_HHmmss.sqlite`. Se a restauração for acionada por engano, o estado anterior é preservado.
 3. **Prevenção de Corrupção por WAL Residual:**  
@@ -88,7 +88,7 @@ Para garantir que a produção nunca seja afetada durante a conferência mensal,
    - Verificação completa de integridade (`PRAGMA integrity_check`).
    - Verificação rápida (`PRAGMA quick_check`).
    - Verificação de violações de chaves estrangeiras (`PRAGMA foreign_key_check`).
-   - Checagem da existência de todas as 10 tabelas fundamentais do sistema.
+   - Checagem da existência de todas as 17 tabelas da aplicação.
    - Teste de mutação transacional (inicia transação, insere registro de teste, realiza rollback).
    - Contagem exata de registros salvos em cada tabela.
 5. Registra o laudo técnico permanente em `storage/logs/restore_drill.log`.
@@ -117,7 +117,7 @@ php bin/test-restore.php --create-backup-first
    [+] Integridade SQLite:        ok
    [+] Quick Check:               ok
    [+] Chaves Estrangeiras:       OK (0 violações)
-   [+] Tabelas do Sistema:        OK (todas as 10 tabelas presentes)
+   [+] Tabelas do Sistema:        OK (todas as 17 tabelas presentes)
    [+] Leitura / Escrita:         OK (transação validada)
 --------------------------------------------------------
  Registros Validados no Backup:
@@ -131,6 +131,13 @@ php bin/test-restore.php --create-backup-first
    - lead_interactions: 32 registro(s)
    - lead_follow_ups: 15 registro(s)
    - import_batches : 2 registro(s)
+   - lead_assignments: 0 registro(s)
+   - signboards       : 0 registro(s)
+   - signboard_movements: 0 registro(s)
+   - owners           : 0 registro(s)
+   - owner_properties : 0 registro(s)
+   - whatsapp_contact_logs: 0 registro(s)
+   - import_source_rows: 0 registro(s)
 --------------------------------------------------------
  RESULTADO: [PASSED] TESTE MENSAL DE RESTAURAÇÃO VALIDADO COM SUCESSO!
  O backup testado é consistente, íntegro e operacionalmente recuperável.

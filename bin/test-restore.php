@@ -97,9 +97,16 @@ try {
         'leads',
         'properties',
         'lead_properties',
+        'lead_assignments',
         'lead_interactions',
         'lead_follow_ups',
         'import_batches',
+        'signboards',
+        'signboard_movements',
+        'owners',
+        'owner_properties',
+        'whatsapp_contact_logs',
+        'import_source_rows',
     ];
 
     $missingTables = [];

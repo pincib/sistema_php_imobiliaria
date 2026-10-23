@@ -83,6 +83,12 @@ final class LeadImportController
         $uploadedFiles = $request->getUploadedFiles();
         $csvFile = $uploadedFiles['file'] ?? null;
         $params = (array)$request->getParsedBody();
+        $requestedDataset = (string)($params['dataset'] ?? 'auto');
+
+        if (!in_array($requestedDataset, ['auto', 'leads', 'properties', 'owners'], true)) {
+            SessionManager::flash('error', 'Tipo de importação inválido. Selecione contatos, imóveis ou proprietários.');
+            return $response->withHeader('Location', '/leads/import')->withStatus(302);
+        }
 
         if (!$csvFile && empty($params['source_file'])) {
             SessionManager::flash('error', 'Nenhum arquivo foi selecionado.');
@@ -93,7 +99,12 @@ final class LeadImportController
             $staged = !empty($params['source_file'])
                 ? $this->importService->stageBundledFile((string)$params['source_file'])
                 : $this->importService->stageUpload($csvFile);
-            $dataset = $this->multiImport->detect($staged['headers']);
+            $detectedDataset = $this->multiImport->detect($staged['headers']);
+            if ($requestedDataset === 'auto' && $detectedDataset === null) {
+                $this->importService->cancelStaging($staged['staging_id']);
+                throw new \InvalidArgumentException('Não foi possível identificar o tipo pelos cabeçalhos. Envie o CSV novamente e escolha contatos, imóveis ou proprietários.');
+            }
+            $dataset = $requestedDataset === 'auto' ? ($detectedDataset ?? 'leads') : $requestedDataset;
             $mapping = $this->multiImport->suggestedMapping($staged['headers'], $dataset);
 
             $_SESSION['import_staging'] = [
@@ -107,6 +118,8 @@ final class LeadImportController
                 'total_rows_estimate' => $staged['total_rows_estimate'],
                 'mapping' => $dataset === 'leads' ? array_merge($staged['suggested_mapping'], $mapping) : $mapping,
                 'dataset' => $dataset,
+                'detected_dataset' => $detectedDataset,
+                'dataset_was_selected' => $requestedDataset !== 'auto',
                 'previous_batch' => $staged['previous_batch'],
                 'duplicate_policy' => LeadImportService::POLICY_MERGE,
                 'default_broker_id' => null,
@@ -143,6 +156,27 @@ final class LeadImportController
 
         try {
             $kind = $staging['dataset'] ?? 'leads';
+            $requiredFields = match ($kind) {
+                'properties' => ['code', 'type', 'address'],
+                'owners' => ['name', 'property_code'],
+                default => [isset($mapping['first_name']) ? 'first_name' : 'name'],
+            };
+            $validIndexes = [];
+            foreach ($mapping as $field => $index) {
+                if ($index === '' || $index === null) continue;
+                if (filter_var($index, FILTER_VALIDATE_INT) === false || (int)$index < 0 || (int)$index >= count($staging['headers'])) {
+                    throw new \InvalidArgumentException('Uma coluna mapeada não existe no arquivo. Confira o mapeamento e tente novamente.');
+                }
+                $validIndexes[$field] = (int)$index;
+            }
+            foreach ($requiredFields as $field) {
+                if (!array_key_exists($field, $validIndexes)) {
+                    $requiredNames = ['code' => 'referência do imóvel', 'type' => 'tipo do imóvel', 'address' => 'logradouro', 'name' => 'nome', 'first_name' => 'nome'];
+                    $label = $requiredNames[$field] ?? $field;
+                    throw new \InvalidArgumentException('Mapeie a coluna obrigatória de ' . $label . ' antes de validar.');
+                }
+            }
+            $mapping = $validIndexes;
             if ($kind === 'leads') {
                 $validation = $this->importService->validateBatch($staging['id'], $mapping, $duplicatePolicy, $defaultBrokerId);
                 // Respect the contact export's split name and secondary contact fields.
@@ -159,11 +193,7 @@ final class LeadImportController
             $_SESSION['import_staging']['validation'] = $validation;
             $_SESSION['import_staging']['step'] = 3; // Passo 3: Validação & Prévia de Impacto
 
-            if (($kind === 'leads' && empty($validation['has_name_mapped']) && !isset($mapping['first_name'])) || (($kind === 'properties' && (!isset($mapping['code']) || !isset($mapping['address']) || !isset($mapping['type']))) || ($kind === 'owners' && (!isset($mapping['name']) || !isset($mapping['property_code']))))) {
-                SessionManager::flash('error', 'A coluna correspondente ao Nome do lead deve ser obrigatoriamente mapeada.');
-            } else {
-                SessionManager::flash('info', 'Validação concluída! Verifique o impacto previsto antes de confirmar a gravação.');
-            }
+            SessionManager::flash('info', 'Validação concluída! Verifique o impacto previsto antes de confirmar a gravação.');
         } catch (Throwable $e) {
             SessionManager::flash('error', 'Falha ao validar planilha: ' . $e->getMessage());
         }
