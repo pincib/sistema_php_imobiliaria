@@ -1,0 +1,15 @@
+/vendor/
+.env
+storage/*.sqlite*
+storage/logs/*
+!storage/logs/.gitkeep
+storage/backups/*
+!storage/backups/.gitkeep
+storage/imports/*
+!storage/imports/.gitkeep
+.phpunit.result.cache
+.DS_Store
+Thumbs.db
+
+# Arquivos temporários locais
+/tmp/

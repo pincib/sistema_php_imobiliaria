@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Relatórios gerenciais — Caderno de negócios</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#111827;background:#f3f4f6;font-size:14px;font-synthesis:none}
+*{box-sizing:border-box}
+body{margin:0;min-width:1180px}
+.frame{height:900px;overflow:hidden;background:#fff}
+a{color:#1e40af;text-decoration:none}a:hover{text-decoration:underline}
+.topbar{height:60px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;padding:0 38px;background:#fff}
+.brand{font-weight:750;letter-spacing:-.03em;font-size:17px;color:#111827}.brand span{color:#1e40af}
+nav{display:flex;align-items:center;gap:26px;height:100%;font-size:13px;color:#475569}nav a{color:inherit;height:100%;display:flex;align-items:center;border-bottom:2px solid transparent}nav a.active{color:#1e40af;border-color:#1e40af;font-weight:650}
+.user{font-size:12px;color:#475569}.avatar{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#eff6ff;color:#1e40af;font-weight:700;margin-right:8px;vertical-align:middle}
+main{height:840px;padding:26px 42px 24px;max-width:1500px;margin:auto;overflow:hidden}
+.intro{display:grid;grid-template-columns:minmax(270px,1fr) auto;gap:28px;align-items:end;padding-bottom:18px;border-bottom:1px solid #d1d5db}
+.eyebrow,.section-label{font-size:10px;line-height:1.2;text-transform:uppercase;letter-spacing:.12em;font-weight:700;color:#64748b}
+h1{font-size:28px;letter-spacing:-.04em;line-height:1.1;margin:7px 0 5px} .sub{margin:0;color:#64748b;font-size:12px}
+.filters{display:flex;align-items:end;gap:9px;margin:0}.field label{display:block;font-size:10px;font-weight:650;color:#475569;margin:0 0 4px}.field input,.field select{height:34px;padding:0 9px;border:1px solid #cbd5e1;border-radius:4px;background:#fff;color:#111827;font:inherit;font-size:12px;margin:0}.field select{min-width:140px}.field input{width:138px}
+button{height:34px;border:0;border-radius:4px;background:#1e40af;color:white;padding:0 13px;font:600 12px system-ui;white-space:nowrap}button.secondary{background:#fff;color:#1e40af;border:1px solid #bfdbfe}
+.meta{display:flex;align-items:center;justify-content:space-between;padding:12px 0 9px;color:#64748b;font-size:11px}.meta strong{color:#334155;font-weight:650}.sample{color:#64748b}
+.totals{display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:1px solid #e5e7eb;border-bottom:1px solid #cbd5e1;margin-bottom:17px}
+.total{display:flex;align-items:center;gap:15px;padding:11px 18px 12px 0;min-height:76px}.total+ .total{border-left:1px solid #e5e7eb;padding-left:22px}.total .num{font-size:33px;line-height:1;font-weight:720;letter-spacing:-.05em;font-variant-numeric:tabular-nums;color:#111827;min-width:66px}.total h2{font-size:13px;margin:0 0 3px}.total p{font-size:10px;line-height:1.4;color:#64748b;margin:0}.total a{font-size:10px;font-weight:650;margin-left:auto;white-space:nowrap}
+.columns{display:grid;grid-template-columns:1.02fr .98fr;gap:30px;height:436px}
+.section{min-width:0}.section-head{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid #111827;padding-bottom:8px;margin-bottom:0}.section h2{font-size:15px;letter-spacing:-.02em;margin:0}.section-head small{font-size:10px;color:#64748b}
+.stage-matrix{display:grid;grid-template-columns:repeat(4,1fr);border-left:1px solid #e5e7eb;border-top:1px solid #e5e7eb;margin-top:10px}
+.stage{min-height:72px;padding:8px 10px 6px;border-right:1px solid #e5e7eb;border-bottom:1px solid #e5e7eb;position:relative}.stage .name{font-size:11px;color:#475569}.stage .count{font-size:21px;font-weight:680;line-height:1.1;margin:8px 0 3px;font-variant-numeric:tabular-nums}.stage a{font-size:10px;font-weight:600}.stage.primary{background:#f8fafc}.stage.primary:before{content:"";position:absolute;top:0;left:0;bottom:0;width:3px;background:#1e40af}
+.note{margin:9px 0 14px;color:#64748b;font-size:10px;line-height:1.45}.origin-title{display:flex;justify-content:space-between;align-items:baseline;margin:13px 0 0}.origin-title h3{font-size:12px;margin:0}.origin-title a{font-size:10px;font-weight:600}
+.records{list-style:none;padding:0;margin:7px 0 0;border-top:1px solid #e5e7eb}.records li{display:grid;grid-template-columns:54px minmax(0,1fr) auto;gap:9px;align-items:center;min-height:37px;border-bottom:1px solid #e5e7eb;font-size:10px}.rid{font-variant-numeric:tabular-nums;color:#64748b}.record-main{min-width:0}.record-main a{font-size:11px;font-weight:650}.record-main span{color:#64748b;margin-left:5px}.record-meta{color:#64748b;white-space:nowrap;font-variant-numeric:tabular-nums}
+.interactions{margin-top:10px}.interactions li{grid-template-columns:42px minmax(0,1fr) 75px 92px}.type{display:inline-block;background:#f1f5f9;color:#475569;padding:3px 6px;border-radius:3px;font-size:9px;white-space:nowrap}.actor{color:#64748b;white-space:nowrap;font-size:10px}.interactions .record-main span{display:block;margin:2px 0 0;font-size:10px}
+.definition{display:flex;justify-content:space-between;gap:20px;border-top:1px solid #cbd5e1;margin-top:15px;padding-top:9px;color:#64748b;font-size:9px;line-height:1.4}.definition strong{color:#334155}.definition a{white-space:nowrap;font-weight:650}
+</style>
+</head>
+<body>
+<div class="frame">
+<header class="topbar">
+  <a class="brand" href="/">pinciara<span>.</span></a>
+  <nav aria-label="Navegação principal"><a href="/">Visão geral</a><a href="/leads">Leads</a><a href="/properties">Imóveis</a><a href="/signboards">Placas</a><a class="active" href="/reports" aria-current="page">Relatórios</a></nav>
+  <div class="user"><span class="avatar">MA</span>Marina Alves · Administradora</div>
+</header>
+<main>
+  <section class="intro" aria-labelledby="title">
+    <div><div class="eyebrow">Caderno de negócios <span aria-hidden="true">/</span> Operação</div><h1 id="title">Relatórios gerenciais</h1><p class="sub">Carteira atual e atividade registrada no período selecionado.</p></div>
+    <form class="filters" action="/reports" method="get">
+      <div class="field"><label for="from">De</label><input id="from" type="date" value="2026-10-01"></div>
+      <div class="field"><label for="to">Até</label><input id="to" type="date" value="2026-10-23"></div>
+      <div class="field"><label for="stage">Estágio</label><select id="stage" name="stage"><option value="">Todos os estágios</option><option value="novo">Novo Lead</option><option value="contato_realizado">Contato Realizado</option><option value="qualificacao">Qualificação</option><option value="visita_agendada">Visita Agendada</option><option value="proposta">Proposta</option><option value="negociacao">Negociação</option><option value="ganho">Ganho / Fechado</option><option value="perdido">Perdido</option></select></div>
+      <div class="field"><label for="broker">Corretor</label><select id="broker"><option>Todos</option><option>Marina Alves</option><option>Rafael Costa</option></select></div>
+      <button type="submit">Aplicar</button>
+    </form>
+  </section>
+  <div class="meta"><span><strong>01 out 2026 — 23 out 2026</strong> · estágio e corretor consideram o valor atual do lead</span><span class="sample">Dados ilustrativos</span></div>
+  <section class="totals" aria-label="Resumo do período">
+    <div class="total"><div class="num">48</div><div><h2>Leads criados</h2><p>Registros com criação no intervalo · datas inclusivas</p></div><a href="#lead-origin">Conferir origem&nbsp; ↘</a></div>
+    <div class="total"><div class="num">126</div><div><h2>Interações registradas</h2><p>Eventos com data de contato no intervalo selecionado</p></div><a href="#interaction-origin">Ver registros&nbsp; ↘</a></div>
+  </section>
+  <div class="columns">
+    <section class="section" aria-labelledby="pipeline">
+      <div class="section-head"><h2 id="pipeline">Carteira por estágio</h2><small>posição atual · 23 out 2026</small></div>
+      <div class="stage-matrix">
+        <div class="stage primary"><div class="name">Novo Lead</div><div class="count">32</div><a href="/leads?stage=novo">Abrir leads ↗</a></div>
+        <div class="stage"><div class="name">Contato Realizado</div><div class="count">24</div><a href="/leads?stage=contato_realizado">Abrir leads ↗</a></div>
+        <div class="stage"><div class="name">Qualificação</div><div class="count">18</div><a href="/leads?stage=qualificacao">Abrir leads ↗</a></div>
+        <div class="stage"><div class="name">Visita Agendada</div><div class="count">12</div><a href="/leads?stage=visita_agendada">Abrir leads ↗</a></div>
+        <div class="stage"><div class="name">Proposta</div><div class="count">9</div><a href="/leads?stage=proposta">Abrir leads ↗</a></div>
+        <div class="stage"><div class="name">Negociação</div><div class="count">8</div><a href="/leads?stage=negociacao">Abrir leads ↗</a></div>
+        <div class="stage"><div class="name">Ganho / Fechado</div><div class="count">11</div><a href="/leads?stage=ganho">Abrir leads ↗</a></div>
+        <div class="stage"><div class="name">Perdido</div><div class="count">12</div><a href="/leads?stage=perdido">Abrir leads ↗</a></div>
+      </div><p class="note">Contagem dos leads em cada estágio atual. Sem filtro de data; não representa entradas nem transições históricas.</p>
+      <div class="origin-title" id="lead-origin"><h3>Origem dos leads criados</h3><a href="/leads?created_from=2026-10-01&amp;created_to=2026-10-23">Ver lista filtrada ↗</a></div>
+      <ul class="records">
+        <li><span class="rid">#2.481</span><span class="record-main"><a href="/leads/2481">Camila Nogueira</a><span>· Novo Lead · Marina Alves</span></span><span class="record-meta">23 out · 14:32</span></li>
+        <li><span class="rid">#2.480</span><span class="record-main"><a href="/leads/2480">André Ribeiro</a><span>· Qualificação · Rafael Costa</span></span><span class="record-meta">23 out · 13:51</span></li>
+        <li><span class="rid">#2.479</span><span class="record-main"><a href="/leads/2479">Juliana Freitas</a><span>· Contato Realizado · Marina Alves</span></span><span class="record-meta">23 out · 11:08</span></li>
+      </ul>
+    </section>
+    <section class="section" aria-labelledby="activity">
+      <div class="section-head"><h2 id="activity">Interações registradas</h2><small>126 no período · recentes abaixo</small></div>
+      <p class="note">Cada linha é um evento do histórico, com ID, data e autor para conferência na ficha do lead.</p>
+      <div class="origin-title" id="interaction-origin"><h3>Registros de origem</h3><a href="/reports?view=interactions">Ver todos os detalhes ↗</a></div>
+      <ul class="records interactions">
+        <li><span class="rid">#8.103</span><span class="record-main"><a href="/leads/2481">Camila Nogueira</a><span>Lead #2.481 · conferir histórico ↗</span></span><span class="type">Ligação</span><span class="actor">Marina Alves<br><small>23 out · 14:47</small></span></li>
+        <li><span class="rid">#8.102</span><span class="record-main"><a href="/leads/2334">Paulo Mendes</a><span>Lead #2.334 · conferir histórico ↗</span></span><span class="type">Visita</span><span class="actor">Rafael Costa<br><small>23 out · 14:10</small></span></li>
+        <li><span class="rid">#8.101</span><span class="record-main"><a href="/leads/2016">Bianca Souza</a><span>Lead #2.016 · conferir histórico ↗</span></span><span class="type">WhatsApp</span><span class="actor">Marina Alves<br><small>23 out · 13:32</small></span></li>
+        <li><span class="rid">#8.100</span><span class="record-main"><a href="/leads/2297">Luiz Fernando</a><span>Lead #2.297 · conferir histórico ↗</span></span><span class="type">E-mail</span><span class="actor">Rafael Costa<br><small>23 out · 12:56</small></span></li>
+        <li><span class="rid">#8.099</span><span class="record-main"><a href="/leads/2130">Patrícia Lima</a><span>Lead #2.130 · conferir histórico ↗</span></span><span class="type">Ligação</span><span class="actor">Marina Alves<br><small>23 out · 11:44</small></span></li>
+        <li><span class="rid">#8.098</span><span class="record-main"><a href="/leads/2022">Roberto Dias</a><span>Lead #2.022 · conferir histórico ↗</span></span><span class="type">WhatsApp</span><span class="actor">Rafael Costa<br><small>23 out · 10:18</small></span></li>
+      </ul>
+      <p class="note">Exibição ilustrativa dos 6 registros mais recentes. A lista completa respeita os filtros e o limite de consulta.</p>
+    </section>
+  </div>
+  <footer class="definition"><span><strong>Definições:</strong> lead criado = registro com <code>created_at</code> no intervalo; interação = evento com <code>contacted_at</code> no intervalo; carteira = estágio atual, sem recorte de data.</span><span><strong>Limites:</strong> período máximo 366 dias · exportação CSV até 5.000 linhas.</span><a href="/reports/export.csv">Exportar CSV</a></footer>
+</main>
+</div>
+</body>
+</html>

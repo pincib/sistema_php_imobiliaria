@@ -1,0 +1,49 @@
+{
+  "title": "Estrutura dos relatórios gerenciais",
+  "question": "Qual composição ajuda melhor o administrador a revisar carteira e atividade no período e conferir os registros de origem?",
+  "options": [
+    {
+      "id": "cooperative-accountability",
+      "kind": "assigned",
+      "label": "Prestação de contas cooperativa",
+      "kicker": "THE ROLL",
+      "lineage": "relatórios anuais de cooperativas e assembleias de membros",
+      "thesis": "Cada indicador vem acompanhado da definição e do caminho até seus registros de origem.",
+      "palette": ["#ffffff", "#111827", "#1e40af", "#64748b"],
+      "materials": ["tabelas de prestação de contas", "notas de origem e método"],
+      "viewport": "Shell familiar do CRM, filtros no topo, resumo da atividade, carteira por estágio e referências aos registros e definições.",
+      "risk": "As notas de método podem competir com a leitura rápida se ganharem destaque demais.",
+      "comp": ".impeccable/mocks/decision/reports-cooperative.webp",
+      "html": ".impeccable/mocks/decision/reports-cooperative.html"
+    },
+    {
+      "id": "business-desk",
+      "kind": "dealt",
+      "label": "Caderno de negócios",
+      "lineage": "páginas de negócios de jornais diários",
+      "thesis": "Um resumo curto abre a leitura e tabelas compactas conduzem da carteira aos eventos que a compõem.",
+      "palette": ["#ffffff", "#111827", "#1e40af", "#64748b"],
+      "materials": ["hierarquia editorial", "colunas de dados escaneáveis"],
+      "viewport": "Filtros junto ao título; resumo de leads e interações; carteira e registros em seções densas, com links de conferência.",
+      "risk": "Uma hierarquia editorial forte pode fazer parecer que há tendências que os dados não medem.",
+      "comp": ".impeccable/mocks/decision/reports-business-desk.webp",
+      "html": ".impeccable/mocks/decision/reports-business-desk.html"
+    },
+    {
+      "id": "daily-timetable",
+      "kind": "dealt",
+      "label": "Quadro de horários",
+      "lineage": "quadros de partidas e horários de transporte",
+      "thesis": "A atividade ganha uma leitura temporal, com cada dia apontando para os registros que o formam.",
+      "palette": ["#ffffff", "#111827", "#1e40af", "#64748b"],
+      "materials": ["grade de colunas", "algarismos tabulares e datas"],
+      "viewport": "Filtros por data, estágio e corretor sobre uma matriz diária de leads e interações, seguida pela carteira atual.",
+      "risk": "A matriz diária pode reduzir a visibilidade imediata da composição atual por estágio.",
+      "comp": ".impeccable/mocks/decision/reports-timetable.webp",
+      "html": ".impeccable/mocks/decision/reports-timetable.html"
+    }
+  ],
+  "reroll": {"registers": ["safer", "bolder"]},
+  "buildPath": {"value": "code", "toggle": true},
+  "steer": true
+}

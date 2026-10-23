@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "audit-code": {
+      "source": "Swader/agent-skills-audit",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "a484ce47bfe64c7adc9dc97ed7477bdc43bafeba91edde6b0a1fcb76f42e637a"
+    }
+  }
+}

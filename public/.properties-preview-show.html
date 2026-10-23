@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="csrf-token" content="afeb430679fba6c3e0a822951479b466148c3822053af9cc00bbb5f02dee81bd">
+    <title>AP101 — Imóvel</title>
+    <link rel="stylesheet" href="/assets/css/pico.min.css">
+    <link rel="stylesheet" href="/assets/css/app.css">
+    <script src="/assets/js/htmx.min.js"></script>
+    <script>
+        // Configura HTMX para enviar o token CSRF automaticamente em todas as requisições AJAX
+        document.addEventListener('DOMContentLoaded', function () {
+            document.body.addEventListener('htmx:configRequest', function (evt) {
+                evt.detail.headers['X-CSRF-Token'] = 'afeb430679fba6c3e0a822951479b466148c3822053af9cc00bbb5f02dee81bd';
+            });
+
+            // Resiliência de Rede & Erros HTMX
+            document.body.addEventListener('htmx:responseError', function (evt) {
+                const errDiv = document.getElementById('dashboard-error');
+                const errMsg = document.getElementById('dashboard-error-message');
+                if (errDiv && errMsg) {
+                    errMsg.textContent = 'Erro ao processar dados (' + evt.detail.xhr.status + '). Tente novamente.';
+                    errDiv.style.display = 'block';
+                }
+            });
+
+            document.body.addEventListener('htmx:sendError', function (evt) {
+                const errDiv = document.getElementById('dashboard-error');
+                const errMsg = document.getElementById('dashboard-error-message');
+                if (errDiv && errMsg) {
+                    errMsg.textContent = 'Falha de comunicação com o servidor. Verifique sua conexão e tente novamente.';
+                    errDiv.style.display = 'block';
+                }
+            });
+
+            document.body.addEventListener('htmx:beforeRequest', function () {
+                const errDiv = document.getElementById('dashboard-error');
+                if (errDiv) {
+                    errDiv.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+    <header class="app-header">
+        <div class="container">
+            <nav>
+                <ul>
+                    <li>
+                        <a href="/" class="brand-title">
+                            <strong>Plataforma Pinciara</strong>
+                        </a>
+                    </li>
+                </ul>
+                <ul>
+                    <li><a href="/" class="">Dashboard</a></li>
+                    <li><a href="/leads" class="">Leads</a></li>
+                    <li><a href="/properties" class="">Imóveis</a></li>
+                    <li><a href="/signboards" class="">Placas</a></li>
+                    
+                                    </ul>
+                <ul>
+                                            <li>
+                            <span class="user-info">
+                                <strong>Ana Corretora</strong>
+                                <span class="badge badge-corretor">
+                                    Corretora                                </span>
+                            </span>
+                        </li>
+                        <li>
+                            <form action="/logout" method="POST" style="margin: 0; display: inline;">
+                                <input type="hidden" name="_csrf_token" value="afeb430679fba6c3e0a822951479b466148c3822053af9cc00bbb5f02dee81bd">                                <button type="submit" class="outline secondary" style="padding: 0.35rem 0.75rem; font-size: 0.85rem; margin: 0;">Sair</button>
+                            </form>
+                        </li>
+                                    </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Mensagens Flash de Sucesso / Erro / Informação -->
+        
+        <header class="property-detail-header"><div><a href="/properties">← Imóveis</a><h1>Apartamento amplo com varanda</h1><p>AP101 · Apartamento · Disponível</p></div><a href="/properties/1/edit" role="button" class="outline">Editar imóvel</a></header>
+<section class="property-detail-grid"><article><header><strong>Dados do imóvel</strong></header><dl><dt>Preço</dt><dd>R$ 850.000,00</dd><dt>Endereço</dt><dd>Rua das Acácias, 123, Icaraí, Niterói</dd><dt>Características</dt><dd>120 m², 3 quartos, 2 vagas</dd><dt>Observações</dt><dd>Chaves com a administração.</dd></dl></article>
+<article><header><strong>Relacionar a leads</strong></header><form method="GET" action="/properties/1"><label>Buscar lead<input type="search" name="lead_q" value="" placeholder="Nome, telefone ou e-mail"></label><button type="submit" class="secondary">Localizar leads</button></form>
+</article></section>
+<section><h2>Leads relacionados <small>(1)</small></h2><p class="properties-scroll-hint" id="related-leads-table-hint">Deslize a tabela horizontalmente para consultar todos os dados.</p><figure class="properties-table-wrap" role="region" aria-label="Leads relacionados ao imóvel" aria-describedby="related-leads-table-hint" tabindex="0"><table class="properties-table"><thead><tr><th scope="col">Lead</th><th scope="col">Telefone</th><th scope="col">Relação</th><th scope="col">Observação</th><th scope="col">Vinculado em</th><th scope="col"><span class="visually-hidden">Ações</span></th></tr></thead><tbody><tr><td><a href="/leads/1">Mariana Costa</a></td><td>21999990000</td><td>interesse</td><td>Visita à tarde</td><td>2026-10-22 14:00:00</td><td><form method="POST" action="/properties/1/leads/1/delete" onsubmit="return confirm('Remover este vínculo? A ação ficará registrada na auditoria.');" style="margin:0"><input type="hidden" name="_csrf_token" value="afeb430679fba6c3e0a822951479b466148c3822053af9cc00bbb5f02dee81bd"><button type="submit" class="outline secondary properties-unlink-button">Desvincular</button></form></td></tr></tbody></table></figure></section>
+    </main>
+
+    <footer class="container" style="padding-top: 1rem; border-top: 1px solid var(--pico-muted-border-color); text-align: center; font-size: 0.8rem; color: var(--pico-muted-color);">
+        <p>Plataforma Pinciara &bull; CRM Imobiliário Local-First &bull; Modo Seguro &bull; SQLite WAL</p>
+    </footer>
+</body>
+</html>

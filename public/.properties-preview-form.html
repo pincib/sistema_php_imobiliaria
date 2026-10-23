@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="csrf-token" content="afeb430679fba6c3e0a822951479b466148c3822053af9cc00bbb5f02dee81bd">
+    <title>Novo imóvel</title>
+    <link rel="stylesheet" href="/assets/css/pico.min.css">
+    <link rel="stylesheet" href="/assets/css/app.css">
+    <script src="/assets/js/htmx.min.js"></script>
+    <script>
+        // Configura HTMX para enviar o token CSRF automaticamente em todas as requisições AJAX
+        document.addEventListener('DOMContentLoaded', function () {
+            document.body.addEventListener('htmx:configRequest', function (evt) {
+                evt.detail.headers['X-CSRF-Token'] = 'afeb430679fba6c3e0a822951479b466148c3822053af9cc00bbb5f02dee81bd';
+            });
+
+            // Resiliência de Rede & Erros HTMX
+            document.body.addEventListener('htmx:responseError', function (evt) {
+                const errDiv = document.getElementById('dashboard-error');
+                const errMsg = document.getElementById('dashboard-error-message');
+                if (errDiv && errMsg) {
+                    errMsg.textContent = 'Erro ao processar dados (' + evt.detail.xhr.status + '). Tente novamente.';
+                    errDiv.style.display = 'block';
+                }
+            });
+
+            document.body.addEventListener('htmx:sendError', function (evt) {
+                const errDiv = document.getElementById('dashboard-error');
+                const errMsg = document.getElementById('dashboard-error-message');
+                if (errDiv && errMsg) {
+                    errMsg.textContent = 'Falha de comunicação com o servidor. Verifique sua conexão e tente novamente.';
+                    errDiv.style.display = 'block';
+                }
+            });
+
+            document.body.addEventListener('htmx:beforeRequest', function () {
+                const errDiv = document.getElementById('dashboard-error');
+                if (errDiv) {
+                    errDiv.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+    <header class="app-header">
+        <div class="container">
+            <nav>
+                <ul>
+                    <li>
+                        <a href="/" class="brand-title">
+                            <strong>Plataforma Pinciara</strong>
+                        </a>
+                    </li>
+                </ul>
+                <ul>
+                    <li><a href="/" class="">Dashboard</a></li>
+                    <li><a href="/leads" class="">Leads</a></li>
+                    <li><a href="/properties" class="">Imóveis</a></li>
+                    <li><a href="/signboards" class="">Placas</a></li>
+                    
+                                    </ul>
+                <ul>
+                                            <li>
+                            <span class="user-info">
+                                <strong>Ana Corretora</strong>
+                                <span class="badge badge-corretor">
+                                    Corretora                                </span>
+                            </span>
+                        </li>
+                        <li>
+                            <form action="/logout" method="POST" style="margin: 0; display: inline;">
+                                <input type="hidden" name="_csrf_token" value="afeb430679fba6c3e0a822951479b466148c3822053af9cc00bbb5f02dee81bd">                                <button type="submit" class="outline secondary" style="padding: 0.35rem 0.75rem; font-size: 0.85rem; margin: 0;">Sair</button>
+                            </form>
+                        </li>
+                                    </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Mensagens Flash de Sucesso / Erro / Informação -->
+        
+        <header class="property-form-header">
+    <a href="/properties">← Imóveis</a>
+    <h1>Novo imóvel</h1>
+    <p>Registre os dados usados pela equipe para identificar e qualificar este imóvel.</p>
+</header>
+
+    <div class="property-form-errors" role="alert" tabindex="-1">
+        <strong>Revise os campos indicados antes de salvar o imóvel.</strong>
+        <p>O primeiro campo com erro foi focado. Corrija os itens sinalizados abaixo.</p>        <ul><li><a href="#property-title">Informe um título de até 180 caracteres.</a></li><li><a href="#property-price">Informe um preço válido.</a></li></ul>    </div>
+
+<form method="POST" action="/properties">
+    <input type="hidden" name="_csrf_token" value="afeb430679fba6c3e0a822951479b466148c3822053af9cc00bbb5f02dee81bd">
+    <fieldset class="property-form-group">
+        <legend>Identificação</legend>
+        <div class="property-field-grid">
+            <label for="property-code">Código
+                <input id="property-code" name="code" maxlength="40" required value="AP101" aria-invalid="false"  aria-describedby="property-code-help">
+                <small id="property-code-help">Identificador único na imobiliária.</small>
+                            </label>
+            <label for="property-title">Título
+                <input id="property-title" name="title" maxlength="180" required value="" aria-invalid="true" autofocus aria-describedby="property-title-error">
+                <small id="property-title-error" class="field-error-text">Informe um título de até 180 caracteres.</small>            </label>
+        </div>
+    </fieldset>
+
+    <fieldset class="property-form-group">
+        <legend>Classificação e preço</legend>
+        <div class="property-field-grid property-classification-grid">
+            <label for="property-type">Tipo
+                <select id="property-type" name="type" required aria-invalid="false"  ><option value="apartamento" selected>Apartamento</option><option value="casa" >Casa</option><option value="cobertura" >Cobertura</option><option value="terreno" >Terreno</option><option value="comercial" >Comercial</option><option value="sala" >Sala</option><option value="outro" >Outro</option></select>
+                            </label>
+            <label for="property-status">Status
+                <select id="property-status" name="status" required aria-invalid="false"  ><option value="disponivel" selected>Disponível</option><option value="reservado" >Reservado</option><option value="vendido" >Vendido</option><option value="alugado" >Alugado</option><option value="inativo" >Inativo</option></select>
+                            </label>
+            <label for="property-price">Preço (R$)
+                <input id="property-price" name="price" inputmode="decimal" value="450000,00" placeholder="Ex.: 450000,00" aria-invalid="true" aria-describedby="property-price-help property-price-error" >
+                <small id="property-price-help">Sem separador de milhar; use vírgula nos centavos.</small>
+                <small id="property-price-error" class="field-error-text">Informe um preço válido.</small>            </label>
+        </div>
+    </fieldset>
+
+    <fieldset class="property-form-group">
+        <legend>Localização</legend>
+        <label for="property-address">Endereço
+            <input id="property-address" name="address" maxlength="255" value="">
+        </label>
+        <div class="property-field-grid">
+            <label for="property-neighborhood">Bairro
+                <input id="property-neighborhood" name="neighborhood" maxlength="120" value="">
+            </label>
+            <label for="property-city">Cidade
+                <input id="property-city" name="city" maxlength="120" value="">
+            </label>
+        </div>
+    </fieldset>
+
+    <fieldset class="property-form-group">
+        <legend>Detalhes</legend>
+        <label for="property-characteristics">Características
+            <textarea id="property-characteristics" name="characteristics" rows="4" maxlength="4000" placeholder="Área, quartos, vagas, acabamento e outros atributos"></textarea>
+        </label>
+        <label for="property-notes">Observações internas
+            <textarea id="property-notes" name="notes" rows="3" maxlength="4000"></textarea>
+        </label>
+    </fieldset>
+
+    <div class="property-form-actions"><button type="submit">Salvar imóvel</button><a href="/properties" role="button" class="secondary outline">Cancelar</a></div>
+</form>
+    </main>
+
+    <footer class="container" style="padding-top: 1rem; border-top: 1px solid var(--pico-muted-border-color); text-align: center; font-size: 0.8rem; color: var(--pico-muted-color);">
+        <p>Plataforma Pinciara &bull; CRM Imobiliário Local-First &bull; Modo Seguro &bull; SQLite WAL</p>
+    </footer>
+</body>
+</html>
