@@ -167,7 +167,9 @@ final class LeadImportController
         }
 
         $params = (array)$request->getParsedBody();
-        $mapping = (array)($params['mapping'] ?? []);
+        // Use o mapeamento sugerido como fallback para formulários enviados sem algum campo.
+        // Valores vazios enviados explicitamente continuam substituindo a sugestão.
+        $mapping = array_replace((array)($staging['mapping'] ?? []), (array)($params['mapping'] ?? []));
         $duplicatePolicy = ($params['duplicate_policy'] ?? '') === LeadImportService::POLICY_SKIP
             ? LeadImportService::POLICY_SKIP
             : LeadImportService::POLICY_MERGE;
@@ -179,7 +181,7 @@ final class LeadImportController
             $requiredFields = match ($kind) {
                 'properties' => ['code', 'type', 'address'],
                 'owners' => ['name', 'property_code'],
-                default => [isset($mapping['first_name']) ? 'first_name' : 'name'],
+                default => ['name'],
             };
             $validIndexes = [];
             foreach ($mapping as $field => $index) {

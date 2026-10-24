@@ -151,7 +151,7 @@ final class SignboardRepository
         $stmt->execute([':property'=>$propertyId, ':id'=>$signboardId]);
         if ($stmt->rowCount() === 0) return false;
         $this->pdo->prepare("INSERT INTO signboard_stage_history(signboard_id,from_stage,to_stage,user_id) VALUES(:id,'disponivel','usadas',:user)")->execute([':id'=>$signboardId, ':user'=>$actorId]);
-        $this->pdo->prepare('INSERT INTO signboard_property_history(signboard_id,property_id,user_id) VALUES(:id,:property,:user)')->execute([':id'=>$signboardId, ':property'=>$propertyId, ':user'=>$actorId]);
+        $this->pdo->prepare('INSERT INTO signboard_property_history(signboard_id,property_id,property_code_snapshot,user_id) SELECT :id,p.id,p.code,:user FROM properties p WHERE p.id=:property')->execute([':id'=>$signboardId, ':property'=>$propertyId, ':user'=>$actorId]);
         return true;
     }
 
@@ -162,7 +162,7 @@ final class SignboardRepository
 
     public function movements(int $id): array
     {
-        $stmt = $this->pdo->prepare("SELECT movement_type, moved_at, notes, user_name FROM (SELECT m.id, m.movement_type, m.moved_at, m.notes, u.name AS user_name FROM signboard_movements m LEFT JOIN users u ON u.id=m.user_id WHERE m.signboard_id=:id UNION ALL SELECT h.id+1000000000 AS id, 'stage_changed' AS movement_type, h.changed_at AS moved_at, 'Etapa alterada: ' || CASE h.from_stage WHEN 'a_fazer' THEN 'A fazer' WHEN 'pago' THEN 'Pago' WHEN 'pronto' THEN 'Pronto' WHEN 'disponivel' THEN 'Disponível' ELSE 'Usadas' END || ' → ' || CASE h.to_stage WHEN 'a_fazer' THEN 'A fazer' WHEN 'pago' THEN 'Pago' WHEN 'pronto' THEN 'Pronto' WHEN 'disponivel' THEN 'Disponível' ELSE 'Usadas' END AS notes, u.name AS user_name FROM signboard_stage_history h LEFT JOIN users u ON u.id=h.user_id WHERE h.signboard_id=:stage_id UNION ALL SELECT ph.id+2000000000 AS id, 'assigned' AS movement_type, ph.assigned_at AS moved_at, 'Placa colocada no imóvel: ' || p.code || ' · ' || p.title AS notes, u.name AS user_name FROM signboard_property_history ph JOIN properties p ON p.id=ph.property_id LEFT JOIN users u ON u.id=ph.user_id WHERE ph.signboard_id=:assignment_id) ORDER BY moved_at DESC, id DESC");
+        $stmt = $this->pdo->prepare("SELECT movement_type, moved_at, notes, user_name FROM (SELECT m.id, m.movement_type, m.moved_at, m.notes, u.name AS user_name FROM signboard_movements m LEFT JOIN users u ON u.id=m.user_id WHERE m.signboard_id=:id UNION ALL SELECT h.id+1000000000 AS id, 'stage_changed' AS movement_type, h.changed_at AS moved_at, 'Etapa alterada: ' || CASE h.from_stage WHEN 'a_fazer' THEN 'A fazer' WHEN 'pago' THEN 'Pago' WHEN 'pronto' THEN 'Pronto' WHEN 'disponivel' THEN 'Disponível' ELSE 'Usadas' END || ' → ' || CASE h.to_stage WHEN 'a_fazer' THEN 'A fazer' WHEN 'pago' THEN 'Pago' WHEN 'pronto' THEN 'Pronto' WHEN 'disponivel' THEN 'Disponível' ELSE 'Usadas' END AS notes, u.name AS user_name FROM signboard_stage_history h LEFT JOIN users u ON u.id=h.user_id WHERE h.signboard_id=:stage_id UNION ALL SELECT ph.id+2000000000 AS id, 'assigned' AS movement_type, ph.assigned_at AS moved_at, 'Placa colocada no imóvel: ' || COALESCE(NULLIF(ph.property_code_snapshot,''),p.code,'Imóvel removido') || COALESCE(' · ' || p.title,'') AS notes, u.name AS user_name FROM signboard_property_history ph LEFT JOIN properties p ON p.id=ph.property_id LEFT JOIN users u ON u.id=ph.user_id WHERE ph.signboard_id=:assignment_id) ORDER BY moved_at DESC, id DESC");
         $stmt->execute([':id' => $id, ':stage_id'=>$id, ':assignment_id'=>$id]);
         return $stmt->fetchAll();
     }

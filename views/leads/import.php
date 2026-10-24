@@ -233,13 +233,13 @@ $importAnotherUrl = '/leads/import?' . http_build_query([
                     1. Associe as colunas da planilha aos campos do CRM
                 </h3>
 
-                <?php $dataset = $staging['dataset'] ?? 'leads'; $customMap = $dataset !== 'leads' || isset($staging['mapping']['name']) || isset($staging['mapping']['first_name']); ?>
+                <?php $dataset = $staging['dataset'] ?? 'leads'; $customMap = true; ?>
                 <?php if ($customMap): ?>
                 <?php
                     $mapFields = $dataset === 'properties'
                         ? ['code'=>'Código *','type'=>'Tipo *','address'=>'Logradouro *','neighborhood'=>'Bairro','city'=>'Cidade','area'=>'Área','intention'=>'Intenção','aspiration'=>'Pretensão','sale'=>'Valor de venda','rent'=>'Valor de locação','iptu'=>'IPTU']
                         : ($dataset === 'owners' ? ['name'=>'Nome do proprietário *','phone'=>'Telefone','email'=>'E-mail','property_code'=>'Código do imóvel *']
-                        : ['name'=>'Nome do lead *','phone'=>'Telefone','email'=>'E-mail','property_ref'=>'Código do imóvel','first_name'=>'First Name','middle_name'=>'Middle Name','last_name'=>'Last Name','alternate_email'=>'E-mail alternativo','alternate_phone'=>'Telefone alternativo','notes'=>'Observações']);
+                        : ['name'=>'Nome do lead *','phone'=>'Telefone','email'=>'E-mail','property_ref'=>'Código do imóvel']);
                 ?>
                 <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
                     <?php foreach ($mapFields as $key => $label): ?>

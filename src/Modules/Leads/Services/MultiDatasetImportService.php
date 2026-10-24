@@ -43,7 +43,7 @@ final class MultiDatasetImportService
         };
         if ($kind === 'properties') foreach (['code'=>['codigo','ref.'],'type'=>['tipo'],'area'=>['area'],'intention'=>['intensao'],'aspiration'=>['pretensao'],'sale'=>['valor_venda','venda'],'rent'=>['valor_locacao','locação'],'address'=>['logradouro'],'neighborhood'=>['bairro'],'city'=>['cidade'],'postal_code'=>['cep'],'iptu'=>['iptu']] as $k=>$v) { $i=$find($v); if($i!==null)$map[$k]=$i; }
         elseif ($kind === 'owners') foreach (['name'=>['name','nome'],'phone'=>['telefone','telefones'],'email'=>['email','e-mail'],'property_code'=>['codigo_imovel','ref. imóvel']] as $k=>$v) { $i=$find($v); if($i!==null)$map[$k]=$i; }
-        else foreach (['name'=>['name'],'property_ref'=>['codigo_imovel'],'first_name'=>['first name'],'middle_name'=>['middle name'],'last_name'=>['last name'],'email'=>['email','e-mail 1 - value'],'alternate_email'=>['e-mail 2 - value'],'phone'=>['telefone','phone 1 - value'],'alternate_phone'=>['phone 2 - value'],'notes'=>['notes']] as $k=>$v) { $i=$find($v); if($i!==null)$map[$k]=$i; }
+        else foreach (['name'=>['name','nome'],'property_ref'=>['codigo_imovel'],'email'=>['email'],'phone'=>['telefone']] as $k=>$v) { $i=$find($v); if($i!==null)$map[$k]=$i; }
         return $map;
     }
 

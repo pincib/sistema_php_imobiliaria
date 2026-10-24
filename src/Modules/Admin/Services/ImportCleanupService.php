@@ -142,7 +142,7 @@ final class ImportCleanupService
     private function legacyEntitiesBatchesSql(string $kind): string
     {
         $source = $this->sourceKind($kind);
-        $fromSource = "SELECT DISTINCT b.id FROM import_batches b JOIN import_source_rows s ON s.batch_id=b.id WHERE s.entity_type='{$source}'
+        $fromSource = "SELECT DISTINCT b.id FROM import_batches b JOIN import_source_rows s ON s.batch_id=b.id AND s.entity_type='{$source}'
             JOIN (SELECT batch_id,COUNT(DISTINCT entity_id) imported_count FROM import_source_rows WHERE entity_type='{$source}'
                 AND entity_id IS NOT NULL GROUP BY batch_id) source_counts ON source_counts.batch_id=b.id AND source_counts.imported_count=b.created_count
             WHERE b.cleanup_supported=0 AND b.cleaned_at IS NULL AND b.status='completed'";
