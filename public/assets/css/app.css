@@ -1713,6 +1713,11 @@ dialog[id^="modal-lead-"] > article {
     margin-top: 0.25rem;
     color: var(--pico-muted-color);
 }
+.properties-page-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+}
 .properties-filters {
     display: grid;
     grid-template-columns: minmax(16rem, 2fr) repeat(3, minmax(9rem, 1fr)) auto;
@@ -1969,7 +1974,12 @@ dialog[id^="modal-lead-"] > article {
         align-items: stretch;
         flex-direction: column;
     }
-    .properties-page-header > a[role="button"] {
+    .properties-page-actions {
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+    }
+    .properties-page-actions > a[role="button"] {
         width: 100%;
         min-height: 2.75rem;
     }
@@ -2117,6 +2127,58 @@ dialog[id^="modal-lead-"] > article {
     .signboard-filters > * { grid-column:auto!important; }
     .signboard-action .property-form-grid { grid-template-columns:minmax(0,1fr); gap:0.25rem; }
 }
+
+/* Signboard procurement board and catalog fields. */
+.signboard-size-fieldset { min-width:0; margin:0; padding:0; border:0; }
+.signboard-size-fieldset legend { margin-bottom:.5rem; font-weight:600; }
+.signboard-size-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+.signboard-board-hint { color:var(--pico-muted-color); margin-block:-.25rem 1rem; }
+.signboard-board { display:grid; grid-template-columns:repeat(5,minmax(14rem,1fr)); gap:1rem; overflow-x:auto; padding:.25rem .15rem 1rem; align-items:start; }
+.signboard-lane { min-width:14rem; background:var(--pico-card-sectioning-background-color); border:1px solid var(--pico-muted-border-color); border-radius:var(--pico-border-radius); padding:.75rem; }
+.signboard-lane-header { display:flex; align-items:center; justify-content:space-between; gap:.75rem; margin-bottom:.75rem; }
+.signboard-lane-header h2 { margin:0; font-size:1rem; }
+.signboard-lane-header > span { min-width:1.75rem; text-align:center; padding:.1rem .45rem; border-radius:999px; background:var(--pico-background-color); color:var(--pico-muted-color); font-size:.8rem; font-variant-numeric:tabular-nums; }
+.signboard-lane-cards { display:grid; align-content:start; gap:.75rem; }
+.signboard-lane-empty { margin:0; padding:.8rem .65rem; color:var(--pico-muted-color); font-size:.9rem; }
+.signboard-board-card { margin:0; padding:.8rem; border:1px solid var(--pico-muted-border-color); box-shadow:none; }
+.signboard-board-card > header { display:grid; gap:.35rem; margin-bottom:.55rem; }
+.signboard-board-card > header a { color:var(--pico-color); text-decoration:none; overflow-wrap:anywhere; }
+.signboard-board-card > header a:hover { text-decoration:underline; text-underline-offset:.16em; }
+.signboard-card-location { margin:0 0 .6rem; color:var(--pico-muted-color); font-size:.85rem; }
+.signboard-board-card dl { display:grid; gap:.35rem; margin:0 0 .75rem; }
+.signboard-board-card dl > div { display:flex; justify-content:space-between; gap:.5rem; font-size:.82rem; }
+.signboard-board-card dt { color:var(--pico-muted-color); }
+.signboard-board-card dd { margin:0; text-align:right; overflow-wrap:anywhere; }
+.signboard-stage-form { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:.5rem; align-items:end; margin:0; padding-top:.65rem; border-top:1px solid var(--pico-muted-border-color); }
+.signboard-stage-form label { margin:0; font-size:.8rem; }
+.signboard-stage-form select,.signboard-stage-form button { margin:0; min-height:2.4rem; padding:.45rem .6rem; font-size:.82rem; }
+.signboard-delete-form { margin:.55rem 0 0; }
+.signboard-delete-form button { margin:0; min-height:2.35rem; padding:.4rem .65rem; font-size:.82rem; }
+.signboard-detail-actions { display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; }
+.signboard-detail-actions form { margin:0; }
+.signboard-stage-pill { padding:.25rem .55rem; border:1px solid var(--pico-muted-border-color); border-radius:999px; }
+@media (max-width:68rem) {
+    .signboard-board { grid-template-columns:repeat(5,minmax(16rem,1fr)); }
+}
+@media (max-width:42rem) {
+    .signboard-size-fields { grid-template-columns:minmax(0,1fr); gap:.25rem; }
+    .signboard-board { grid-template-columns:repeat(5,minmax(17rem,84vw)); gap:.65rem; }
+    .signboard-lane { min-width:17rem; }
+}
+.signboard-property-picker { min-width:0; margin:0; padding:1rem; border:1px solid var(--pico-muted-border-color); border-radius:var(--pico-border-radius); }
+.signboard-property-picker legend { padding-inline:.35rem; font-weight:600; }
+.signboard-property-picker > label { margin-bottom:.25rem; }
+.signboard-property-picker > p { margin-block:.35rem .75rem; color:var(--pico-muted-color); font-size:.9rem; }
+.signboard-property-picker input[type="search"] { min-height:2.75rem; }
+.signboard-property-options { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.35rem .75rem; max-height:19rem; overflow:auto; overscroll-behavior:contain; padding:.25rem; border:1px solid var(--pico-muted-border-color); border-radius:var(--pico-border-radius); }
+.signboard-property-option { display:flex; min-width:0; min-height:2.75rem; align-items:center; gap:.65rem; margin:0; padding:.35rem .5rem; overflow-wrap:anywhere; border-radius:var(--pico-border-radius); }
+.signboard-property-option:hover { background:var(--pico-card-background-color); }
+.signboard-property-option input { flex:0 0 auto; margin:0; }
+.signboard-property-option[hidden] { display:none; }
+.signboard-property-option span { min-width:0; }
+.signboard-property-option strong { font-variant-numeric:tabular-nums; }
+.signboard-property-option small { display:block; color:var(--pico-muted-color); }
+@media(max-width:42rem) { .signboard-property-picker { padding:.65rem; } .signboard-property-options { grid-template-columns:minmax(0,1fr); max-height:16rem; } }
 
 
 

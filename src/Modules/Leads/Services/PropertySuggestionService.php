@@ -103,7 +103,7 @@ final class PropertySuggestionService
         $old = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$old) return ['success' => false, 'error' => 'Lead não encontrado.'];
         $cleanRegions = $regions === '' ? null : $regions;
-        $this->pdo->prepare('UPDATE leads SET search_regions=:regions, search_price_min=:min, search_price_max=:max, updated_at=CURRENT_TIMESTAMP WHERE id=:id')->execute([
+        $this->pdo->prepare('UPDATE leads SET search_regions=:regions, search_price_min=:min, search_price_max=:max, import_batch_id=NULL, updated_at=CURRENT_TIMESTAMP WHERE id=:id')->execute([
             ':regions' => $cleanRegions, ':min' => $min, ':max' => $max, ':id' => $leadId,
         ]);
         AuditService::log('lead.property_search_preferences_updated', 'lead', (string)$leadId, $old, ['search_regions' => $cleanRegions, 'search_price_min' => $min, 'search_price_max' => $max], $actorId);

@@ -31,13 +31,15 @@ final class SignboardsController
             'q'=>mb_substr(is_string($query) ? trim($query) : '', 0, 120),
             'status'=>is_string($status) && isset(SignboardService::STATUSES[$status]) ? $status : '',
         ];
-        $result = $this->service->repository()->paginate(max(1,(int)($q['page'] ?? 1)), 20, $filters);
-        return $this->render($response, 'signboards/index', ['title'=>'Placas', 'overview'=>$this->service->getOverview(), 'signboards'=>$result['data'], 'total'=>$result['total'], 'page'=>$result['page'], 'totalPages'=>$result['total_pages'], 'filters'=>$filters, 'statuses'=>SignboardService::STATUSES]);
+        $signboards = $this->service->repository()->board($filters);
+        $stageCounts = array_fill_keys(array_keys(SignboardService::BOARD_STAGES), 0);
+        foreach ($signboards as $signboard) $stageCounts[$signboard['board_stage']] = ($stageCounts[$signboard['board_stage']] ?? 0) + 1;
+        return $this->render($response, 'signboards/index', ['title'=>'Placas', 'overview'=>$this->service->getOverview(), 'signboards'=>$signboards, 'stageCounts'=>$stageCounts, 'filters'=>$filters, 'statuses'=>SignboardService::STATUSES, 'stages'=>SignboardService::BOARD_STAGES]);
     }
 
     public function create(Request $request, Response $response): Response
     {
-        return $this->render($response, 'signboards/form', ['title'=>'Cadastrar placa','signboard'=>[],'errors'=>[],'properties'=>$this->service->repository()->properties(),'users'=>$this->service->repository()->activeUsers(),'action'=>'/signboards','editing'=>false]);
+        return $this->render($response, 'signboards/form', ['title'=>'Cadastrar placa','signboard'=>[],'errors'=>[],'properties'=>$this->service->repository()->properties(),'users'=>$this->service->repository()->activeUsers(),'action'=>'/signboards','editing'=>false,'materials'=>SignboardService::MATERIALS,'dealTypes'=>SignboardService::DEAL_TYPES]);
     }
 
     public function store(Request $request, Response $response): Response
@@ -49,7 +51,7 @@ final class SignboardsController
     {
         $id=(int)$args['id']; $row=$this->service->repository()->find($id);
         if (!$row || $row['removed_at'] !== null) return $response->withHeader('Location','/signboards')->withStatus(302);
-        return $this->render($response,'signboards/form',['title'=>'Editar placa','signboard'=>$row,'errors'=>[],'properties'=>$this->service->repository()->properties(),'users'=>$this->service->repository()->activeUsers(),'action'=>'/signboards/'.$id,'editing'=>true]);
+        return $this->render($response,'signboards/form',['title'=>'Editar placa','signboard'=>$row,'errors'=>[],'properties'=>$this->service->repository()->properties(),'users'=>$this->service->repository()->activeUsers(),'action'=>'/signboards/'.$id,'editing'=>true,'materials'=>SignboardService::MATERIALS,'dealTypes'=>SignboardService::DEAL_TYPES]);
     }
 
     public function update(Request $request, Response $response, array $args): Response
@@ -61,7 +63,7 @@ final class SignboardsController
     {
         $input=(array)($request->getParsedBody() ?? []);
         $result=$this->service->save($input,(int)(AuthService::user()['id'] ?? 0),$id);
-        if (!$result['success']) return $this->render($response,'signboards/form',['title'=>$id?'Editar placa':'Cadastrar placa','signboard'=>$input,'errors'=>$result['errors'],'properties'=>$this->service->repository()->properties(),'users'=>$this->service->repository()->activeUsers(),'action'=>$id?'/signboards/'.$id:'/signboards','editing'=>$id!==null])->withStatus(422);
+        if (!$result['success']) return $this->render($response,'signboards/form',['title'=>$id?'Editar placa':'Cadastrar placa','signboard'=>$input,'errors'=>$result['errors'],'properties'=>$this->service->repository()->properties(),'users'=>$this->service->repository()->activeUsers(),'action'=>$id?'/signboards/'.$id:'/signboards','editing'=>$id!==null,'materials'=>SignboardService::MATERIALS,'dealTypes'=>SignboardService::DEAL_TYPES])->withStatus(422);
         SessionManager::flash('success',$id?'Cadastro da placa atualizado.':'Placa cadastrada e histórico iniciado.');
         return $response->withHeader('Location','/signboards/'.$result['signboard_id'])->withStatus(302);
     }
@@ -69,6 +71,36 @@ final class SignboardsController
     public function show(Request $request, Response $response, array $args): Response
     {
         return $this->renderDetail($response,(int)$args['id']);
+    }
+
+    public function assignForm(Request $request, Response $response, array $args): Response
+    {
+        $id=(int)$args['id'];
+        $row=$this->service->repository()->find($id);
+        if (!$row) return $response->withHeader('Location','/signboards')->withStatus(302);
+        if ($row['board_stage']!=='disponivel' || $row['property_id']!==null) {
+            SessionManager::flash('error','A placa precisa estar Disponível e sem imóvel vinculado.');
+            return $response->withHeader('Location','/signboards')->withStatus(302);
+        }
+        return $this->renderAssignment($response,$row,[],null);
+    }
+
+    public function assign(Request $request, Response $response, array $args): Response
+    {
+        $id=(int)$args['id'];
+        $body=(array)($request->getParsedBody() ?? []);
+        $result=$this->service->assignToProperty($id,$body['property_id'] ?? null,(int)(AuthService::user()['id'] ?? 0));
+        if (!$result['success']) {
+            $row=$this->service->repository()->find($id);
+            if (!$row) return $response->withHeader('Location','/signboards')->withStatus(302);
+            if ($row['board_stage']!=='disponivel' || $row['property_id']!==null) {
+                SessionManager::flash('error',$result['error']);
+                return $response->withHeader('Location','/signboards')->withStatus(302);
+            }
+            return $this->renderAssignment($response,$row,['property_id'=>$result['error']],$body['property_id'] ?? null)->withStatus(422);
+        }
+        SessionManager::flash('success','Placa vinculada ao imóvel e movida para Usadas.');
+        return $response->withHeader('Location','/signboards/'.$id)->withStatus(302);
     }
 
     public function install(Request $request, Response $response, array $args): Response
@@ -91,11 +123,32 @@ final class SignboardsController
         return $response->withHeader('Location','/signboards/'.$id)->withStatus(302);
     }
 
+    public function changeStage(Request $request, Response $response, array $args): Response
+    {
+        $body=(array)($request->getParsedBody() ?? []);
+        $id=(int)$args['id'];
+        $result=$this->service->changeStage($id,$this->inputText($body,'board_stage'),(int)(AuthService::user()['id'] ?? 0));
+        SessionManager::flash($result['success']?'success':'error',$result['success']?'Etapa atualizada.':$result['error']);
+        return $response->withHeader('Location','/signboards')->withStatus(302);
+    }
+
+    public function delete(Request $request, Response $response, array $args): Response
+    {
+        $result=$this->service->archive((int)$args['id'],(int)(AuthService::user()['id'] ?? 0));
+        SessionManager::flash($result['success']?'success':'error',$result['success']?'Placa excluída do quadro. O histórico foi mantido para auditoria.':$result['error']);
+        return $response->withHeader('Location','/signboards')->withStatus(302);
+    }
+
     private function renderDetail(Response $response, int $id, int $status=200, ?string $actionError=null, array $actionInput=[], ?string $actionKind=null): Response
     {
         $row=$this->service->repository()->find($id);
         if (!$row) return $response->withHeader('Location','/signboards')->withStatus(302);
-        return $this->render($response,'signboards/show',['title'=>'Placa · '.$row['property_code'],'signboard'=>$row,'movements'=>$this->service->repository()->movements($id),'statuses'=>SignboardService::STATUSES,'actionError'=>$actionError,'actionInput'=>$actionInput,'actionKind'=>$actionKind])->withStatus($status);
+        return $this->render($response,'signboards/show',['title'=>'Placa · '.($row['property_code'] ?? 'sem imóvel'),'signboard'=>$row,'movements'=>$this->service->repository()->movements($id),'statuses'=>SignboardService::STATUSES,'actionError'=>$actionError,'actionInput'=>$actionInput,'actionKind'=>$actionKind])->withStatus($status);
+    }
+
+    private function renderAssignment(Response $response,array $row,array $errors=[],mixed $selectedPropertyId=null): Response
+    {
+        return $this->render($response,'signboards/assign',['title'=>'Colocar placa','signboard'=>$row,'properties'=>$this->service->repository()->properties(),'errors'=>$errors,'selectedPropertyId'=>$selectedPropertyId]);
     }
 
     private function inputText(array $input,string $key): string

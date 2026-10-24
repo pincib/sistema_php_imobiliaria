@@ -78,7 +78,7 @@ final class PropertyRepository
     public function update(int $id, array $data): void
     {
         $data[':id'] = $id;
-        $stmt = $this->pdo->prepare('UPDATE properties SET code=:code,title=:title,type=:type,price=:price,status=:status,address=:address,neighborhood=:neighborhood,city=:city,characteristics=:characteristics,notes=:notes,google_maps_url=:google_maps_url,built_area=:built_area,land_area=:land_area,intention=:intention,sale_price=:sale_price,rent_price=:rent_price,aspiration=:aspiration,condominium_price=:condominium_price,iptu_price=:iptu_price,listing_url=:listing_url,updated_at=CURRENT_TIMESTAMP WHERE id=:id');
+        $stmt = $this->pdo->prepare('UPDATE properties SET code=:code,title=:title,type=:type,price=:price,status=:status,address=:address,neighborhood=:neighborhood,city=:city,characteristics=:characteristics,notes=:notes,google_maps_url=:google_maps_url,built_area=:built_area,land_area=:land_area,intention=:intention,sale_price=:sale_price,rent_price=:rent_price,aspiration=:aspiration,condominium_price=:condominium_price,iptu_price=:iptu_price,listing_url=:listing_url,import_batch_id=NULL,updated_at=CURRENT_TIMESTAMP WHERE id=:id');
         $stmt->execute($data);
     }
 

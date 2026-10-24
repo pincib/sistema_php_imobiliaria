@@ -90,6 +90,7 @@ final class LeadRepository
                 phone = :phone,
                 source = :source,
                 notes = :notes,
+                import_batch_id = NULL,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = :id
         ');
@@ -113,6 +114,7 @@ final class LeadRepository
             UPDATE leads SET
                 stage = :stage,
                 loss_reason = :loss_reason,
+                import_batch_id = NULL,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = :id
         ');

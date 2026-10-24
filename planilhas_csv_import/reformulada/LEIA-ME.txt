@@ -1,0 +1,13 @@
+ARQUIVOS REFORMULADOS — CRM IMOBILIÁRIO
+
+Ordem recomendada: 1) imoveis_reformulada.csv; 2) proprietarios_reformulada.csv; 3) leads_reformulada.csv.
+Selecione manualmente o tipo de cada CSV na importação. Os cabeçalhos seguem os exemplos enviados e podem exigir mapeamento manual na prévia.
+
+Mapeamento de imóveis: Codigo→referência/código; Tipo→tipo; Logradouro→logradouro; Bairro→bairro; Cidade→cidade; Valor_Venda→venda; Valor_Locacao→locação; IPTU→IPTU. Area, Intensao e Pretensao seguem no CSV e a linha de origem fica preservada.
+Mapeamento de proprietários: Name→nome; Codigo_Imovel→referência do imóvel; Telefone→telefone; Email→e-mail.
+Mapeamento de leads: Name→nome; Codigo_Imovel→código do imóvel (se o importador mostrar o campo); Telefone→telefone; Email→e-mail.
+
+Regras usadas: nomes de contatos tiveram códigos no padrão XX0000 retirados e enviados para Codigo_Imovel quando o imóvel está no arquivo importável. Um contato com vários códigos conhecidos aparece uma vez por código; a importação deve mesclar registros iguais e manter cada vínculo. Telefones/e-mails secundários não cabem no modelo e não foram colocados no CSV principal.
+Area veio de Área Total no cadastro proprietário-imóvel, com fallback para Área. Intensao foi derivada de venda/locação com valor maior que zero. Pretensao veio de Finalidade. Valores sem origem confiável não foram inventados.
+
+Use revisar_imoveis.csv, revisar_proprietarios.csv e revisar_leads.csv para conferir exceções e vínculos não resolvidos. Os arquivos originais permanecem intactos.

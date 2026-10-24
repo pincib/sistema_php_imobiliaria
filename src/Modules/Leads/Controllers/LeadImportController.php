@@ -43,6 +43,11 @@ final class LeadImportController
         $brokers = $this->leadService->getRepository()->getActiveBrokers();
         $recentBatches = $batchRepo->listRecent(10);
         $queryParams = $request->getQueryParams();
+        $requestedDataset = (string)($queryParams['dataset'] ?? 'auto');
+        if (!in_array($requestedDataset, ['auto', 'leads', 'properties', 'owners'], true)) {
+            $requestedDataset = 'auto';
+        }
+        $requestedReturnTo = $this->normalizeReturnContext($queryParams['return_to'] ?? null, $requestedDataset);
 
         // Se houver staging ativo na sessão, verifica se o arquivo ainda existe no disco
         if ($staging !== null) {
@@ -59,6 +64,15 @@ final class LeadImportController
         } elseif ($staging !== null) {
             $step = $staging['step'] ?? 2;
         }
+        $selectedDataset = $staging['dataset'] ?? ($step === 4
+            ? ($_SESSION['last_import_result']['kind'] ?? 'auto')
+            : $requestedDataset);
+        $returnTo = $staging['return_to'] ?? ($step === 4
+            ? ($_SESSION['last_import_result']['return_to'] ?? $requestedReturnTo)
+            : $requestedReturnTo);
+        $returnPath = $staging['return_path'] ?? ($step === 4
+            ? ($_SESSION['last_import_result']['return_path'] ?? $this->returnPathForContext($returnTo))
+            : $this->returnPathForContext($returnTo));
 
         $html = $this->renderer->render('leads/import', [
             'title' => 'Assistente de Importação de Planilhas — CRM Imobiliário',
@@ -69,6 +83,9 @@ final class LeadImportController
             'maxFileSizeMb' => (int)(LeadImportService::MAX_FILE_SIZE / 1048576),
             'maxRows' => LeadImportService::MAX_ROWS,
             'lastResult' => $_SESSION['last_import_result'] ?? null,
+            'selectedDataset' => $selectedDataset,
+            'returnTo' => $returnTo,
+            'returnPath' => $returnPath,
         ]);
 
         $response->getBody()->write($html);
@@ -89,10 +106,11 @@ final class LeadImportController
             SessionManager::flash('error', 'Tipo de importação inválido. Selecione contatos, imóveis ou proprietários.');
             return $response->withHeader('Location', '/leads/import')->withStatus(302);
         }
+        $returnTo = $this->normalizeReturnContext($params['return_to'] ?? null, $requestedDataset);
 
         if (!$csvFile && empty($params['source_file'])) {
             SessionManager::flash('error', 'Nenhum arquivo foi selecionado.');
-            return $response->withHeader('Location', '/leads/import')->withStatus(302);
+            return $response->withHeader('Location', $this->importUrlForDataset($requestedDataset, $returnTo))->withStatus(302);
         }
 
         try {
@@ -118,6 +136,8 @@ final class LeadImportController
                 'total_rows_estimate' => $staged['total_rows_estimate'],
                 'mapping' => $dataset === 'leads' ? array_merge($staged['suggested_mapping'], $mapping) : $mapping,
                 'dataset' => $dataset,
+                'return_to' => $returnTo,
+                'return_path' => $this->returnPathForContext($returnTo),
                 'detected_dataset' => $detectedDataset,
                 'dataset_was_selected' => $requestedDataset !== 'auto',
                 'previous_batch' => $staged['previous_batch'],
@@ -132,7 +152,7 @@ final class LeadImportController
             SessionManager::flash('error', $e->getMessage());
         }
 
-        return $response->withHeader('Location', '/leads/import')->withStatus(302);
+        return $response->withHeader('Location', $this->importUrlForDataset($requestedDataset, $returnTo))->withStatus(302);
     }
 
     /**
@@ -177,10 +197,8 @@ final class LeadImportController
                 }
             }
             $mapping = $validIndexes;
-            if ($kind === 'leads') {
+            if ($kind === 'leads' && !$this->usesMultiDatasetImport($kind, $staging, $mapping)) {
                 $validation = $this->importService->validateBatch($staging['id'], $mapping, $duplicatePolicy, $defaultBrokerId);
-                // Respect the contact export's split name and secondary contact fields.
-                if (isset($mapping['first_name'])) $validation = $this->multiImport->analyze($this->importService->getStagingPath($staging['id']), $kind, $mapping, $staging['delimiter'], $staging['filename'], $zeroPolicy);
             } else {
                 $validation = $this->multiImport->analyze($this->importService->getStagingPath($staging['id']), $kind, $mapping, $staging['delimiter'], $staging['filename'], $zeroPolicy);
             }
@@ -235,7 +253,7 @@ final class LeadImportController
 
         try {
             $kind = $staging['dataset'] ?? 'leads';
-            if ($kind !== 'leads' || isset($mapping['first_name'])) {
+            if ($this->usesMultiDatasetImport($kind, $staging, $mapping)) {
                 $validation = $staging['validation'] ?? null;
                 if (!$validation || ($validation['kind'] ?? null) !== $kind) throw new \InvalidArgumentException('Valide novamente o mapeamento antes de confirmar.');
                 if (!empty($staging['previous_batch']) && !$allowDuplicateBatch) throw new \InvalidArgumentException('Este arquivo já foi importado. Marque a confirmação de reexecução antes de prosseguir.');
@@ -255,6 +273,9 @@ final class LeadImportController
 
             // Armazena o sumário final na sessão para exibição imediata
             $_SESSION['last_import_result'] = $result;
+            $_SESSION['last_import_result']['kind'] = $kind;
+            $_SESSION['last_import_result']['return_to'] = $staging['return_to'] ?? $this->normalizeReturnContext(null, $kind);
+            $_SESSION['last_import_result']['return_path'] = $staging['return_path'] ?? $this->returnPathForContext($_SESSION['last_import_result']['return_to']);
 
             SessionManager::flash('success', sprintf(
                 'Lote %s concluído: %d inseridos, %d atualizados, %d ignorados, %d inválidos.',
@@ -278,12 +299,40 @@ final class LeadImportController
     public function cancel(Request $request, Response $response): Response
     {
         $staging = $_SESSION['import_staging'] ?? null;
+        $returnPath = $staging['return_path'] ?? $this->returnPathForContext($staging['return_to'] ?? $this->normalizeReturnContext(null, $staging['dataset'] ?? 'leads'));
         if ($staging !== null && !empty($staging['id'])) {
             $this->importService->cancelStaging($staging['id']);
             unset($_SESSION['import_staging']);
         }
 
         SessionManager::flash('info', 'Processo de importação cancelado. Os arquivos e prévias temporárias foram descartados.');
-        return $response->withHeader('Location', '/leads')->withStatus(302);
+        return $response->withHeader('Location', $returnPath)->withStatus(302);
+    }
+
+    private function normalizeReturnContext(mixed $context, string $dataset): string
+    {
+        if (in_array($context, ['leads', 'properties', 'owners'], true)) return $context;
+        return in_array($dataset, ['leads', 'properties', 'owners'], true) ? $dataset : 'leads';
+    }
+
+    private function usesMultiDatasetImport(string $kind, array $staging, array $mapping): bool
+    {
+        if ($kind !== 'leads' || isset($mapping['first_name'])) return true;
+        $headers = array_map(static fn($header) => mb_strtolower(trim((string)$header)), $staging['headers'] ?? []);
+        return in_array('codigo_imovel', $headers, true);
+    }
+
+    private function returnPathForContext(string $context): string
+    {
+        return match ($context) {
+            'properties' => '/properties',
+            'owners' => '/owners',
+            default => '/leads',
+        };
+    }
+
+    private function importUrlForDataset(string $dataset, string $returnTo): string
+    {
+        return '/leads/import?' . http_build_query(['dataset' => $dataset, 'return_to' => $returnTo]);
     }
 }

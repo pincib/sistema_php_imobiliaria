@@ -8,6 +8,8 @@ use App\Audit\AuditService;
 use App\Auth\Session\SessionManager;
 use App\Backup\BackupService;
 use App\Database\Connection;
+use App\Auth\AuthService;
+use App\Modules\Admin\Services\ImportCleanupService;
 use App\View\Renderer;
 use PDO;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -18,11 +20,13 @@ final class SystemController
 {
     private Renderer $renderer;
     private BackupService $backupService;
+    private ImportCleanupService $importCleanup;
 
-    public function __construct(?Renderer $renderer = null, ?BackupService $backupService = null)
+    public function __construct(?Renderer $renderer = null, ?BackupService $backupService = null, ?ImportCleanupService $importCleanup = null)
     {
         $this->renderer = $renderer ?? new Renderer();
         $this->backupService = $backupService ?? new BackupService();
+        $this->importCleanup = $importCleanup ?? new ImportCleanupService();
     }
 
     public function index(Request $request, Response $response): Response
@@ -78,6 +82,11 @@ final class SystemController
             'backups' => $backups,
             'latestBackup' => $latestBackup,
             'recentLogs' => $recentLogs,
+            'importCleanup' => [
+                'leads' => $this->importCleanup->preview('leads'),
+                'owners' => $this->importCleanup->preview('owners'),
+                'properties' => $this->importCleanup->preview('properties'),
+            ],
         ]);
 
         $response->getBody()->write($html);
@@ -134,6 +143,30 @@ final class SystemController
             SessionManager::flash('error', "Erro ao simular restauração: " . $e->getMessage());
         }
 
+        return $response->withHeader('Location', '/admin/system')->withStatus(302);
+    }
+
+    public function clearImportedData(Request $request, Response $response): Response
+    {
+        $input = (array)$request->getParsedBody();
+        $kind = (string)($input['dataset'] ?? '');
+        $expected = match ($kind) { 'leads' => 'LIMPAR LEADS', 'owners' => 'LIMPAR PROPRIETÁRIOS', 'properties' => 'LIMPAR IMÓVEIS', default => '' };
+        if ($expected === '' || !hash_equals($expected, trim((string)($input['confirmation'] ?? '')))) {
+            SessionManager::flash('error', 'Confirmação não confere. Nenhum cadastro foi limpo.');
+            return $response->withHeader('Location', '/admin/system')->withStatus(302);
+        }
+
+        try {
+            $actorId = (int)(AuthService::user()['id'] ?? 0);
+            $result = $this->importCleanup->clear($kind, $actorId);
+            $message = "Limpeza concluída: {$result['deleted']} cadastros e {$result['links_deleted']} vínculos e históricos associados removidos; {$result['preserved']} registros antigos sem origem comprovada preservados.";
+            if ($result['signboards_unlinked'] > 0) {
+                $message .= " {$result['signboards_unlinked']} placas foram mantidas sem imóvel vinculado.";
+            }
+            SessionManager::flash('success', $message . " Backup: {$result['backup']}.");
+        } catch (Throwable $e) {
+            SessionManager::flash('error', 'A limpeza foi cancelada: ' . $e->getMessage());
+        }
         return $response->withHeader('Location', '/admin/system')->withStatus(302);
     }
 }

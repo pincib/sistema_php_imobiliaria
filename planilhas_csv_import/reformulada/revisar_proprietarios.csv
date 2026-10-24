@@ -1,0 +1,5 @@
+﻿Linha_origem,Name,Codigo_Imovel,Motivo,Endereco_origem
+3,Luiz Pinciara,IL0001,Imóvel não existe no CSV de imóveis importáveis; conferir o código/endereço antes de vincular.,- - São Gonçalo
+34,Joel Romito,CA0280,Imóvel não existe no CSV de imóveis importáveis; conferir o código/endereço antes de vincular.,"Rua Doutor Nilton Velmosvitsky, nº 88 - Camboinhas - Niterói"
+260,Rômulo Alcântara,CA0346,Imóvel não existe no CSV de imóveis importáveis; conferir o código/endereço antes de vincular.,"Rua Soares de Miranda, nº 121 - Fonseca - Niterói"
+263,Raphael Fernandes Damaceno Chaves,AP0198,Imóvel não existe no CSV de imóveis importáveis; conferir o código/endereço antes de vincular.,"Rua Recreio da Fonte, nº 5, ap 201 - Itaipu - Niterói"

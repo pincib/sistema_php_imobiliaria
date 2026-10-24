@@ -71,6 +71,42 @@
     </article>
 </div>
 
+<section style="margin-bottom: 2.5rem;">
+    <article style="border-color: var(--pico-del-color);">
+        <header>
+            <h3 style="margin: 0 0 .35rem;">Limpar importações de planilhas</h3>
+            <p style="margin: 0; color: var(--pico-muted-color);">
+                Apague os cadastros importados selecionados e também seus históricos e vínculos associados. Um backup é criado antes da limpeza.
+            </p>
+        </header>
+        <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem;">
+            <?php foreach ([
+                'leads' => ['Leads', 'LIMPAR LEADS'],
+                'owners' => ['Proprietários', 'LIMPAR PROPRIETÁRIOS'],
+                'properties' => ['Imóveis', 'LIMPAR IMÓVEIS'],
+            ] as $dataset => [$label, $confirmation]): $counts = $importCleanup[$dataset] ?? ['total' => 0, 'removable' => 0, 'preserved' => 0, 'relations' => 0, 'legacy' => 0, 'batches' => 0, 'signboards' => 0]; ?>
+                <article style="margin: 0; padding: 1rem;">
+                    <h4 style="margin: 0 0 .75rem;"><?= $e($label) ?></h4>
+                    <p style="margin: 0 0 .75rem; font-size: .9rem;">
+                        <?= (int)$counts['removable'] ?> cadastros serão removidos · <?= (int)$counts['relations'] ?> vínculos e históricos associados · <?= (int)$counts['preserved'] ?> registros sem origem comprovada preservados
+                    </p>
+                    <?php if ($dataset === 'properties' && (int)$counts['signboards'] > 0): ?><small style="display:block;margin-bottom:.75rem;"><?= (int)$counts['signboards'] ?> placas serão mantidas e ficarão sem imóvel vinculado.</small><?php endif; ?>
+                    <?php if ((int)$counts['legacy'] > 0): ?><small style="display:block;margin-bottom:.75rem;">Importações antigas identificadas: <?= (int)$counts['legacy'] ?> registros; <?= (int)($counts['legacy_removable'] ?? 0) ?> incluídos nesta limpeza.</small><?php endif; ?>
+                    <form action="/admin/system/imports/clear" method="POST" onsubmit="return confirm('Os cadastros importados, históricos e vínculos associados serão removidos.<?php if ($dataset === 'properties' && (int)$counts['signboards'] > 0): ?> As placas serão mantidas sem imóvel vinculado.<?php endif; ?> Será criado um backup antes da limpeza. Deseja continuar?');">
+                        <?= $csrfField ?>
+                        <input type="hidden" name="dataset" value="<?= $e($dataset) ?>">
+                        <label for="confirm-<?= $e($dataset) ?>">Digite <code><?= $e($confirmation) ?></code> para confirmar
+                            <input id="confirm-<?= $e($dataset) ?>" name="confirmation" autocomplete="off" required>
+                        </label>
+                        <button type="submit" class="outline contrast" style="margin-bottom: 0;" <?= (int)$counts['removable'] === 0 ? 'disabled title="Nenhum cadastro importado identificado para remover."' : '' ?>>Limpar <?= $e($label) ?> importados</button>
+                    </form>
+                </article>
+            <?php endforeach; ?>
+        </div>
+        <small>Ao limpar cada tipo, seus cadastros importados e históricos/vínculos associados são removidos juntos. Placas não são apagadas: se estiverem ligadas a um imóvel removido, ficam sem vínculo. Registros antigos cuja origem não possa ser comprovada são preservados. O backup local é criado antes de apagar.</small>
+    </article>
+</section>
+
 <!-- Ações Rápidas de Operação -->
 <section style="margin-bottom: 2.5rem;">
     <article style="padding: 1.5rem; background: var(--pico-card-sectioning-background-color);">

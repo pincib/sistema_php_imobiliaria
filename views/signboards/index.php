@@ -1,7 +1,7 @@
 <header class="properties-page-header">
     <div>
         <h1>Placas</h1>
-        <p>Acompanhe instalações, validades e retiradas vinculadas aos imóveis.</p>
+        <p>Acompanhe a compra, preparação e uso das placas vinculadas aos imóveis.</p>
     </div>
     <a href="/signboards/new" role="button">Cadastrar placa</a>
 </header>
@@ -14,36 +14,50 @@
 
 <form class="properties-filters signboard-filters" method="GET" action="/signboards">
     <label>Buscar placa, imóvel ou responsável
-        <input type="search" name="q" maxlength="120" value="<?= $e($filters['q']) ?>" placeholder="Localização, endereço, bairro, cidade, código ou responsável">
+        <input type="search" name="q" maxlength="120" value="<?= $e($filters['q']) ?>" placeholder="Código, nome ou endereço do imóvel, responsável">
     </label>
-    <label>Status
-        <select name="status"><option value="">Todos</option><?php foreach ($statuses as $key=>$label): ?><option value="<?= $e($key) ?>" <?= $filters['status']===$key?'selected':'' ?>><?= $e($label) ?></option><?php endforeach ?></select>
+    <label>Situação operacional
+        <select name="status"><option value="">Todas</option><?php foreach ($statuses as $key=>$label): ?><option value="<?= $e($key) ?>" <?= $filters['status']===$key?'selected':'' ?>><?= $e($label) ?></option><?php endforeach ?></select>
     </label>
     <button type="submit">Buscar placas</button>
     <?php if ($filters['q']!=='' || $filters['status']!==''): ?><a href="/signboards" role="button" class="secondary outline">Limpar</a><?php endif ?>
 </form>
 
-<p class="properties-results-count"><?= $e((string)$total) ?> placa(s)<?= $totalPages>1?' · Página '.$e((string)$page).' de '.$e((string)$totalPages):'' ?></p>
-<p class="properties-scroll-hint signboard-scroll-hint" id="signboards-table-hint">Em telas estreitas, deslize a tabela para consultar todas as informações.</p>
-<figure class="properties-table-wrap" role="region" aria-label="Placas cadastradas" aria-describedby="signboards-table-hint" tabindex="0">
-    <table class="properties-table signboards-table">
-        <thead><tr><th scope="col">Situação</th><th scope="col">Imóvel</th><th scope="col">Ponto</th><th scope="col">Responsável</th><th scope="col">Instalação</th><th scope="col">Validade</th></tr></thead>
-        <tbody>
-            <?php if (!$signboards): ?><tr><td colspan="6" class="properties-empty-state"><?= $filters['q']!=='' || $filters['status']!==''?'Nenhuma placa corresponde à busca.':'Nenhuma placa cadastrada. Cadastre a primeira para começar a acompanhar as movimentações.' ?></td></tr><?php endif ?>
-            <?php foreach ($signboards as $row): ?><tr>
-                <td><span class="signboard-status signboard-status-<?= $e($row['operational_status']) ?>"><?= $e($statuses[$row['operational_status']] ?? $row['operational_status']) ?></span></td>
-                <td><a href="/signboards/<?= $e((string)$row['id']) ?>"><strong><?= $e($row['property_code']) ?></strong><br><?= $e($row['property_title']) ?></a><br><small><?= $e(implode(', ',array_filter([$row['neighborhood'],$row['city']]))) ?></small></td>
-                <td><?= $e($row['location']) ?></td>
-                <td><?= $e($row['responsible_name']) ?></td>
-                <td><?= $row['installed_at']?$e(substr($row['installed_at'],0,10)):($row['removed_at']?'—':'Aguardando instalação') ?></td>
-                <td><?= $row['expires_at']?$e(substr($row['expires_at'],0,10)):'Sem validade' ?></td>
-            </tr><?php endforeach ?>
-        </tbody>
-    </table>
-</figure>
-
-<?php if ($totalPages>1): ?><nav class="properties-pagination" aria-label="Paginação de placas"><ul>
-    <?php if($page>1): ?><li><a href="?<?= $e(http_build_query(array_merge($filters,['page'=>$page-1]))) ?>">Anterior</a></li><?php endif ?>
-    <li><span aria-current="page">Página <?= $e((string)$page) ?> de <?= $e((string)$totalPages) ?></span></li>
-    <?php if($page<$totalPages): ?><li><a href="?<?= $e(http_build_query(array_merge($filters,['page'=>$page+1]))) ?>">Próxima</a></li><?php endif ?>
-</ul></nav><?php endif ?>
+<p class="properties-results-count"><?= $e((string)count($signboards)) ?> placa(s) no quadro<?= $filters['status']!==''?' · filtro: '.$e($statuses[$filters['status']]):'' ?></p>
+<p class="signboard-board-hint">Mova cada placa pela lista de etapas ao final do cartão. A movimentação fica registrada no histórico da placa.</p>
+<section class="signboard-board" aria-label="Quadro de etapas das placas">
+    <?php foreach ($stages as $stageKey=>$stageLabel): ?>
+        <section class="signboard-lane" aria-labelledby="lane-<?= $e($stageKey) ?>">
+            <header class="signboard-lane-header"><h2 id="lane-<?= $e($stageKey) ?>"><?= $e($stageLabel) ?></h2><span><?= $e((string)($stageCounts[$stageKey] ?? 0)) ?></span></header>
+            <div class="signboard-lane-cards">
+                <?php $laneItems = array_filter($signboards, static fn(array $row): bool => $row['board_stage'] === $stageKey); ?>
+                <?php if (!$laneItems): ?><p class="signboard-lane-empty"><?= $filters['q']!=='' || $filters['status']!==''?'Nenhuma placa nesta etapa para os filtros atuais.':'Nenhuma placa nesta etapa.' ?></p><?php endif ?>
+                <?php foreach ($laneItems as $row): ?>
+                    <article class="signboard-board-card">
+                        <header><a href="/signboards/<?= $e((string)$row['id']) ?>"><strong><?= $row['property_id'] !== null ? $e($row['property_code'].' · '.$row['property_title']) : 'Placa sem imóvel · #'.$e((string)$row['id']) ?></strong></a><span class="signboard-status signboard-status-<?= $e($row['operational_status']) ?>"><?= $e($statuses[$row['operational_status']] ?? $row['operational_status']) ?></span></header>
+                        <dl>
+                            <div><dt>Material</dt><dd><?= $e($row['material'] === 'lona' ? 'Lona' : ($row['material'] === 'adesivo' ? 'Adesivo' : 'Outro')) ?></dd></div>
+                            <div><dt>Tamanho</dt><dd><?= $row['height_cm'] !== null ? $e(rtrim(rtrim(number_format((float)$row['height_cm'],2,',','.'),'0'),',')) : '—' ?> × <?= $row['length_cm'] !== null ? $e(rtrim(rtrim(number_format((float)$row['length_cm'],2,',','.'),'0'),',')) : '—' ?> cm</dd></div>
+                            <div><dt>Modalidade</dt><dd><?= $e(['compra'=>'Compra','aluguel'=>'Aluguel','compra_aluguel'=>'Compra e aluguel'][$row['deal_type']] ?? $row['deal_type']) ?></dd></div>
+                            <div><dt>Responsável</dt><dd><?= $e($row['responsible_name']) ?></dd></div>
+                        </dl>
+                        <?php if ($stageKey === 'disponivel' && $row['property_id'] === null): ?><a href="/signboards/<?= $e((string)$row['id']) ?>/assign" role="button">Colocar placa</a><?php endif ?>
+                        <form class="signboard-stage-form" method="POST" action="/signboards/<?= $e((string)$row['id']) ?>/stage">
+                            <?= $csrfField ?>
+                            <label for="stage-<?= $e((string)$row['id']) ?>">Mover para
+                                <select id="stage-<?= $e((string)$row['id']) ?>" name="board_stage" aria-label="Mover placa <?= $row['property_id'] !== null ? $e($row['property_code']) : '#'.$e((string)$row['id']) ?> para etapa">
+                                    <?php foreach ($stages as $optionKey=>$optionLabel): ?><option value="<?= $e($optionKey) ?>" <?= $stageKey===$optionKey?'selected':'' ?> <?= $optionKey==='usadas' && $row['property_id']===null?'disabled':'' ?>><?= $e($optionLabel) ?></option><?php endforeach ?>
+                                </select>
+                            </label>
+                            <button type="submit" class="secondary outline">Mover</button>
+                        </form>
+                        <form class="signboard-delete-form" method="POST" action="/signboards/<?= $e((string)$row['id']) ?>/delete" onsubmit="return confirm('Excluir esta placa do quadro? O histórico será mantido para auditoria.');">
+                            <?= $csrfField ?>
+                            <button type="submit" class="btn-danger">Excluir placa</button>
+                        </form>
+                    </article>
+                <?php endforeach ?>
+            </div>
+        </section>
+    <?php endforeach ?>
+</section>

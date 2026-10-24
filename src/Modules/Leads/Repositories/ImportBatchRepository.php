@@ -52,6 +52,7 @@ final class ImportBatchRepository
                 duplicate_policy,
                 status,
                 summary_json,
+                data_kind,
                 created_at
             ) VALUES (
                 :batch_code,
@@ -67,6 +68,7 @@ final class ImportBatchRepository
                 :duplicate_policy,
                 :status,
                 :summary_json,
+                :data_kind,
                 CURRENT_TIMESTAMP
             )
         ');
@@ -85,6 +87,7 @@ final class ImportBatchRepository
             ':duplicate_policy' => $data['duplicate_policy'] ?? 'merge',
             ':status' => $data['status'] ?? 'completed',
             ':summary_json' => $data['summary_json'] ?? null,
+            ':data_kind' => $data['data_kind'] ?? null,
         ]);
 
         return (int)$this->pdo->lastInsertId();
@@ -103,7 +106,7 @@ final class ImportBatchRepository
         $allowed = [
             'total_rows', 'created_count', 'updated_count',
             'skipped_count', 'error_count', 'duplicate_policy',
-            'status', 'summary_json'
+            'status', 'summary_json', 'cleanup_supported', 'cleaned_at'
         ];
 
         foreach ($allowed as $field) {

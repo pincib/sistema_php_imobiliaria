@@ -44,10 +44,11 @@ final class OwnersController
         if($errors)return $this->form($response,$b+['property_ids'=>$propertyIds],$errors,$id?'/owners/'.$id:'/owners',$id?'Editar proprietário':'Novo proprietário')->withStatus(422);
         $actor=(int)(AuthService::user()['id']??0);$oldValues=null;
         $saved=\App\Database\Connection::transaction(function(\PDO $pdo) use (&$id,$isCreate,$propertySelectionProvided,$name,$email,$phone,$notes,$propertyIds,$actor,&$oldValues): bool {
-            if($id){$old=$this->find($id);if(!$old)return false;$oldLinks=$pdo->prepare('SELECT property_id FROM owner_properties WHERE owner_id=:id ORDER BY property_id');$oldLinks->execute([':id'=>$id]);$oldValues=['name'=>$old['name'],'email'=>$old['email'],'phone'=>$old['phone'],'notes'=>$old['notes'],'property_ids'=>array_map('intval',$oldLinks->fetchAll(\PDO::FETCH_COLUMN))];$st=$pdo->prepare('UPDATE owners SET name=:name,email=:email,phone=:phone,notes=:notes,updated_at=CURRENT_TIMESTAMP WHERE id=:id');$st->execute([':name'=>$name,':email'=>$email,':phone'=>$phone,':notes'=>$notes?:null,':id'=>$id]);}
+            if($id){$old=$this->find($id);if(!$old)return false;$oldLinks=$pdo->prepare('SELECT property_id FROM owner_properties WHERE owner_id=:id ORDER BY property_id');$oldLinks->execute([':id'=>$id]);$oldValues=['name'=>$old['name'],'email'=>$old['email'],'phone'=>$old['phone'],'notes'=>$old['notes'],'property_ids'=>array_map('intval',$oldLinks->fetchAll(\PDO::FETCH_COLUMN))];$st=$pdo->prepare('UPDATE owners SET name=:name,email=:email,phone=:phone,notes=:notes,import_batch_id=NULL,updated_at=CURRENT_TIMESTAMP WHERE id=:id');$st->execute([':name'=>$name,':email'=>$email,':phone'=>$phone,':notes'=>$notes?:null,':id'=>$id]);}
             else{$st=$pdo->prepare('INSERT INTO owners(name,email,phone,notes) VALUES(:name,:email,:phone,:notes)');$st->execute([':name'=>$name,':email'=>$email,':phone'=>$phone,':notes'=>$notes?:null]);$id=(int)$pdo->lastInsertId();}
             if($propertySelectionProvided){
                 $link=$pdo->prepare('INSERT INTO owner_properties(owner_id,property_id,linked_by_user_id) VALUES(:owner,:property,:user) ON CONFLICT(owner_id,property_id) DO NOTHING');foreach($propertyIds as $pid)$link->execute([':owner'=>$id,':property'=>$pid,':user'=>$actor]);
+                $pdo->prepare('UPDATE owner_properties SET import_batch_id=NULL WHERE owner_id=:owner')->execute([':owner'=>$id]);
                 if($propertyIds){$delete=$pdo->prepare('DELETE FROM owner_properties WHERE owner_id=:owner AND property_id NOT IN ('.implode(',',array_fill(0,count($propertyIds),'?')).')');$delete->bindValue(':owner',$id,\PDO::PARAM_INT);foreach($propertyIds as $index=>$pid)$delete->bindValue($index+1,$pid,\PDO::PARAM_INT);$delete->execute();}
                 else {$delete=$pdo->prepare('DELETE FROM owner_properties WHERE owner_id=:owner');$delete->execute([':owner'=>$id]);}
             }
@@ -74,14 +75,26 @@ final class OwnersController
     private function renderWhatsapp(Request $request,Response $response,int $id): Response
     {
         $owner=$this->find($id);if(!$owner)throw new HttpNotFoundException($request,'Proprietário não encontrado.');$s=$this->pdo()->prepare('SELECT p.id AS property_id,p.code,p.title FROM owner_properties op JOIN properties p ON p.id=op.property_id WHERE op.owner_id=:id ORDER BY p.code');$s->execute([':id'=>$id]);$props=$s->fetchAll(\PDO::FETCH_ASSOC);$h=$this->pdo()->prepare("SELECT w.*,u.name user_name FROM whatsapp_contact_logs w LEFT JOIN users u ON u.id=w.user_id WHERE contact_type='owner' AND contact_id=:id ORDER BY w.id DESC LIMIT 20");$h->execute([':id'=>$id]);
-        return $this->page($response,'contacts/whatsapp',['title'=>'WhatsApp — '.$owner['name'],'contactType'=>'owner','contact'=>$owner,'properties'=>$props,'history'=>$h->fetchAll(\PDO::FETCH_ASSOC),'action'=>'/owners/'.$id.'/whatsapp','returnUrl'=>'/owners/'.$id,'rules'=>['1º contato','Pós-visita','Nova oportunidade','Follow-up','Pós-fechamento de contrato']]);
+        $rules = match (true) {
+            count($props) === 1 => ['Atualização mensal — 1 imóvel'],
+            count($props) >= 2 => ['Atualização mensal — 2 ou mais imóveis'],
+            default => [],
+        };
+        return $this->page($response,'contacts/whatsapp',['title'=>'WhatsApp — '.$owner['name'],'contactType'=>'owner','contact'=>$owner,'properties'=>$props,'history'=>$h->fetchAll(\PDO::FETCH_ASSOC),'action'=>'/owners/'.$id.'/whatsapp','returnUrl'=>'/owners/'.$id,'rules'=>$rules]);
     }
     public function saveWhatsappResult(Request $request,Response $response,array $args): Response
     {
         $id=(int)$args['id'];
         if(!$this->find($id))throw new HttpNotFoundException($request,'Proprietário não encontrado.');
         $b=(array)($request->getParsedBody()??[]);
-        $allowed=['1º contato','Pós-visita','Nova oportunidade','Follow-up','Pós-fechamento de contrato'];
+        $propertyCountStatement=$this->pdo()->prepare('SELECT COUNT(*) FROM owner_properties WHERE owner_id=:id');
+        $propertyCountStatement->execute([':id'=>$id]);
+        $propertyCount=(int)$propertyCountStatement->fetchColumn();
+        $allowed=match(true) {
+            $propertyCount===1 => ['Atualização mensal — 1 imóvel'],
+            $propertyCount>=2 => ['Atualização mensal — 2 ou mais imóveis'],
+            default => [],
+        };
         $results=['confirmed'=>'confirmado pelo corretor','not_sent'=>'não enviado','cancelled'=>'cancelado'];
         $rule=(string)($b['rule']??'');$message=trim((string)($b['message']??''));$result=(string)($b['result']??'');
         $validEncoding=mb_check_encoding($message,'UTF-8');

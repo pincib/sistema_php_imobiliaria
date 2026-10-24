@@ -13,6 +13,26 @@
  */
 
 $lastResult = $lastResult ?? ($_SESSION['last_import_result'] ?? null);
+$selectedDataset = $selectedDataset ?? ($staging['dataset'] ?? 'auto');
+$returnTo = $returnTo ?? match ($selectedDataset) {
+    'properties' => 'properties',
+    'owners' => 'owners',
+    default => 'leads',
+};
+$returnPath = $returnPath ?? match ($selectedDataset) {
+    'properties' => '/properties',
+    'owners' => '/owners',
+    default => '/leads',
+};
+$returnLabel = match ($returnPath) {
+    '/properties' => 'Voltar para Imóveis',
+    '/owners' => 'Voltar para Proprietários',
+    default => 'Voltar para Leads',
+};
+$importAnotherUrl = '/leads/import?' . http_build_query([
+    'dataset' => $selectedDataset,
+    'return_to' => $returnTo,
+]);
 ?>
 
 <div style="margin-bottom: 1.5rem;">
@@ -24,8 +44,8 @@ $lastResult = $lastResult ?? ($_SESSION['last_import_result'] ?? null);
             </p>
         </div>
         <div>
-            <a href="/leads" role="button" class="outline secondary" style="font-size: 0.85rem; padding: 0.4rem 0.8rem;">
-                &larr; Voltar para Leads
+            <a href="<?= $e($returnPath) ?>" role="button" class="outline secondary" style="font-size: 0.85rem; padding: 0.4rem 0.8rem;">
+                &larr; <?= $e($returnLabel) ?>
             </a>
         </div>
     </div>
@@ -67,59 +87,28 @@ $lastResult = $lastResult ?? ($_SESSION['last_import_result'] ?? null);
                         O sistema processará os cabeçalhos e exibirá uma prévia de conferência antes de qualquer gravação no banco de dados.
                     </p>
                 </div>
-                <div>
-                    <a href="data:text/csv;charset=utf-8,<?= rawurlencode("Nome;Telefone;E-mail;Origem;Corretor;Observacoes\nBeatriz Mendes;21988887777;beatriz@exemplo.com;site;Carlos Corretor;Interesse em apartamento Icaraí\nRodrigo Silva;21977776666;rodrigo@exemplo.com;whatsapp;;Procura casa linear Piratininga\n") ?>" 
-                       download="modelo_importacao_leads.csv" 
-                       role="button" 
-                       class="outline secondary" 
-                       style="font-size: 0.8rem; padding: 0.35rem 0.75rem;">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.3rem;">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="7 10 12 15 17 10"></polyline>
-                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                        </svg>
-                        Baixar modelo para contatos (.csv)
-                    </a>
+                <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
+                    <a href="data:text/csv;charset=utf-8,<?= rawurlencode("Codigo,Tipo,Logradouro,Bairro,Cidade,Area,Intensao,Pretensao,Valor_Venda,Valor_Locacao,IPTU\n") ?>" download="modelo_imoveis.csv" role="button" class="outline secondary" style="font-size:.8rem;padding:.35rem .75rem;">Modelo de imóveis</a>
+                    <a href="data:text/csv;charset=utf-8,<?= rawurlencode("Name,Codigo_Imovel,Telefone,Email\n") ?>" download="modelo_leads.csv" role="button" class="outline secondary" style="font-size:.8rem;padding:.35rem .75rem;">Modelo de leads</a>
+                    <a href="data:text/csv;charset=utf-8,<?= rawurlencode("Name,Codigo_Imovel,Telefone,Email\n") ?>" download="modelo_proprietarios.csv" role="button" class="outline secondary" style="font-size:.8rem;padding:.35rem .75rem;">Modelo de proprietários</a>
                 </div>
             </header>
 
-            <form action="/leads/import/upload" method="POST">
-                <?= $csrfField ?>
-
-                <div class="import-source-picker">
-                    <label for="bundled-source">CSV já disponível neste projeto
-                        <select id="bundled-source" name="source_file" required>
-                            <option value="">-- Escolha uma fonte --</option>
-                            <option value="Imóveis-20261020.csv">Imóveis-20261020.csv — Imóveis</option>
-                            <option value="Planilha sem título - Proprietários_por_imóveis-20261023 (2).csv">Proprietários_por_imóveis-20261023 (2).csv — Proprietários e vínculos</option>
-                            <option value="contacts_filtrados.csv">contacts_filtrados.csv — Contatos / leads</option>
-                        </select>
-                    </label>
-                    <label for="bundled-dataset">Tipo dos dados
-                        <select id="bundled-dataset" name="dataset" required>
-                            <option value="auto">Detectar pelos cabeçalhos</option>
-                            <option value="leads">Contatos / leads</option>
-                            <option value="properties">Imóveis</option>
-                            <option value="owners">Proprietários</option>
-                        </select>
-                    </label>
-                    <button type="submit" class="outline secondary" style="margin:0">Preparar prévia desta fonte</button>
-                </div>
-            </form>
-
             <form action="/leads/import/upload" method="POST" enctype="multipart/form-data">
                 <?= $csrfField ?>
-                <p style="margin:1rem 0 .75rem;color:var(--pico-muted-color)">Ou envie outro arquivo CSV:</p>
+                <input type="hidden" name="return_to" value="<?= $e($returnTo) ?>">
+                <p style="margin:1rem 0 .75rem;color:var(--pico-muted-color)">Selecione o arquivo CSV que deseja importar:</p>
 
                 <label for="upload-dataset">Tipo dos dados
                     <select id="upload-dataset" name="dataset" required>
-                        <option value="auto">Detectar pelos cabeçalhos</option>
-                        <option value="leads">Contatos / leads</option>
-                        <option value="properties">Imóveis</option>
-                        <option value="owners">Proprietários</option>
+                        <option value="auto" <?= $selectedDataset === 'auto' ? 'selected' : '' ?>>Detectar pelos cabeçalhos</option>
+                        <option value="leads" <?= $selectedDataset === 'leads' ? 'selected' : '' ?>>Contatos / leads</option>
+                        <option value="properties" <?= $selectedDataset === 'properties' ? 'selected' : '' ?>>Imóveis</option>
+                        <option value="owners" <?= $selectedDataset === 'owners' ? 'selected' : '' ?>>Proprietários</option>
                     </select>
-                    <small>Se os cabeçalhos não forem reconhecidos, escolha aqui o tipo correto para receber o mapeamento correspondente.</small>
+                        <small>Leads e proprietários usam os mesmos cabeçalhos; selecione o tipo correto antes de enviar. Para imóveis, o mapeamento segue o modelo disponível acima.</small>
                 </label>
+                <p style="margin-top:-.5rem;color:var(--pico-muted-color);font-size:.9rem;"><code>Codigo_Imovel</code> vincula leads e proprietários ao imóvel correspondente. Se o imóvel ainda não estiver cadastrado, o código fica preservado e o vínculo é criado quando a planilha de imóveis for importada. Leads e proprietários não são vinculados entre si.</p>
 
                 <div style="border: 2px dashed var(--pico-muted-border-color); border-radius: 8px; padding: 2.5rem 1.5rem; text-align: center; margin-bottom: 1.5rem; background: var(--pico-card-sectioning-background-color);">
                     <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--pico-primary); margin-bottom: 1rem;">
@@ -146,7 +135,7 @@ $lastResult = $lastResult ?? ($_SESSION['last_import_result'] ?? null);
                 </div>
 
                 <div class="import-upload-actions">
-                    <a href="/leads" role="button" class="outline secondary" style="margin: 0;">Cancelar</a>
+                    <a href="<?= $e($returnPath) ?>" role="button" class="outline secondary" style="margin: 0;">Cancelar</a>
                     <button type="submit" class="primary" style="margin: 0;">Enviar e Visualizar Prévia &rarr;</button>
                 </div>
             </form>
@@ -244,13 +233,13 @@ $lastResult = $lastResult ?? ($_SESSION['last_import_result'] ?? null);
                     1. Associe as colunas da planilha aos campos do CRM
                 </h3>
 
-                <?php $dataset = $staging['dataset'] ?? 'leads'; $customMap = $dataset !== 'leads' || isset($staging['mapping']['first_name']); ?>
+                <?php $dataset = $staging['dataset'] ?? 'leads'; $customMap = $dataset !== 'leads' || isset($staging['mapping']['name']) || isset($staging['mapping']['first_name']); ?>
                 <?php if ($customMap): ?>
                 <?php
                     $mapFields = $dataset === 'properties'
-                        ? ['code'=>'Ref. do imóvel *','type'=>'Tipo *','sale'=>'Venda','rent'=>'Locação','address'=>'Logradouro *','neighborhood'=>'Bairro','city'=>'Cidade','postal_code'=>'CEP','iptu'=>'IPTU']
-                        : ($dataset === 'owners' ? ['name'=>'Nome do proprietário *','phone'=>'Telefones','email'=>'E-mail','property_code'=>'Ref. imóvel *']
-                        : ['first_name'=>'First Name *','middle_name'=>'Middle Name','last_name'=>'Last Name','email'=>'E-mail principal','alternate_email'=>'E-mail alternativo','phone'=>'Telefone principal','alternate_phone'=>'Telefone alternativo','notes'=>'Observações (Notes)','property_ref'=>'Código do imóvel (opcional)']);
+                        ? ['code'=>'Código *','type'=>'Tipo *','address'=>'Logradouro *','neighborhood'=>'Bairro','city'=>'Cidade','area'=>'Área','intention'=>'Intenção','aspiration'=>'Pretensão','sale'=>'Valor de venda','rent'=>'Valor de locação','iptu'=>'IPTU']
+                        : ($dataset === 'owners' ? ['name'=>'Nome do proprietário *','phone'=>'Telefone','email'=>'E-mail','property_code'=>'Código do imóvel *']
+                        : ['name'=>'Nome do lead *','phone'=>'Telefone','email'=>'E-mail','property_ref'=>'Código do imóvel','first_name'=>'First Name','middle_name'=>'Middle Name','last_name'=>'Last Name','alternate_email'=>'E-mail alternativo','alternate_phone'=>'Telefone alternativo','notes'=>'Observações']);
                 ?>
                 <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
                     <?php foreach ($mapFields as $key => $label): ?>
@@ -265,7 +254,7 @@ $lastResult = $lastResult ?? ($_SESSION['last_import_result'] ?? null);
                     </div>
                     <?php endforeach; ?>
                 </div>
-                <?php if ($dataset === 'leads'): ?><p role="status" style="margin-top:.75rem">Os contatos serão importados sem vínculo com imóvel. O código não está presente nos cabeçalhos informados; se existir outra coluna de referência no CSV completo, selecione-a acima.</p><?php endif; ?>
+                <?php if ($dataset === 'leads'): ?><p role="status" style="margin-top:.75rem">O código do imóvel será vinculado quando corresponder a um imóvel já cadastrado.</p><?php endif; ?>
                 <?php if ($dataset === 'properties'): ?>
                     <label for="zero-policy" style="max-width: 520px; margin-top: 1rem;">Como interpretar valores <code>0,00</code> nesta planilha?
                         <select id="zero-policy" name="zero_policy">
@@ -663,11 +652,11 @@ $lastResult = $lastResult ?? ($_SESSION['last_import_result'] ?? null);
         </div>
 
         <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
-            <a href="/leads/import" role="button" class="outline" style="margin: 0;">
+            <a href="<?= $e($importAnotherUrl) ?>" role="button" class="outline" style="margin: 0;">
                 Importar Outra Planilha
             </a>
-            <a href="/leads" role="button" class="primary" style="margin: 0;">
-                Visualizar Carteira de Leads &rarr;
+            <a href="<?= $e($returnPath) ?>" role="button" class="primary" style="margin: 0;">
+                Voltar para <?= $e($returnPath === '/properties' ? 'Imóveis' : ($returnPath === '/owners' ? 'Proprietários' : 'Leads')) ?> &rarr;
             </a>
         </div>
     </article>

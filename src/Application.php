@@ -197,11 +197,15 @@ final class Application
             $group->get('/signboards', [SignboardsController::class, 'index']);
             $group->get('/signboards/new', [SignboardsController::class, 'create']);
             $group->post('/signboards', [SignboardsController::class, 'store'])->add(new CsrfMiddleware());
+            $group->get('/signboards/{id:[0-9]+}/assign', [SignboardsController::class, 'assignForm']);
+            $group->post('/signboards/{id:[0-9]+}/assign', [SignboardsController::class, 'assign'])->add(new CsrfMiddleware());
+            $group->post('/signboards/{id:[0-9]+}/delete', [SignboardsController::class, 'delete'])->add(new CsrfMiddleware());
             $group->get('/signboards/{id:[0-9]+}', [SignboardsController::class, 'show']);
             $group->get('/signboards/{id:[0-9]+}/edit', [SignboardsController::class, 'edit']);
             $group->post('/signboards/{id:[0-9]+}', [SignboardsController::class, 'update'])->add(new CsrfMiddleware());
             $group->post('/signboards/{id:[0-9]+}/install', [SignboardsController::class, 'install'])->add(new CsrfMiddleware());
             $group->post('/signboards/{id:[0-9]+}/remove', [SignboardsController::class, 'remove'])->add(new CsrfMiddleware());
+            $group->post('/signboards/{id:[0-9]+}/stage', [SignboardsController::class, 'changeStage'])->add(new CsrfMiddleware());
 
             // ---------------------------------------------------------
             // Sub-grupo Restrito para Administradores (RBAC)
@@ -218,6 +222,7 @@ final class Application
                 $adminGroup->get('/system', [SystemController::class, 'index']);
                 $adminGroup->post('/system/backup', [SystemController::class, 'triggerBackup'])->add(new CsrfMiddleware());
                 $adminGroup->post('/system/test-restore', [SystemController::class, 'triggerTestRestore'])->add(new CsrfMiddleware());
+                $adminGroup->post('/system/imports/clear', [SystemController::class, 'clearImportedData'])->add(new CsrfMiddleware());
             })->add(new RoleMiddleware(['admin']));
 
         })->add(new AuthMiddleware());

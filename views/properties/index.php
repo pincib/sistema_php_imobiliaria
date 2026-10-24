@@ -6,7 +6,12 @@
         <h1>Imóveis</h1>
         <p>Consulte o inventário e veja quais oportunidades estão relacionadas.</p>
     </div>
-    <a href="/properties/new" role="button">Cadastrar imóvel</a>
+    <div class="properties-page-actions">
+        <?php if (($currentUser['role'] ?? '') === 'admin'): ?>
+            <a href="/leads/import?dataset=properties&amp;return_to=properties" role="button" class="outline secondary">Importar CSV</a>
+        <?php endif ?>
+        <a href="/properties/new" role="button">Cadastrar imóvel</a>
+    </div>
 </header>
 
 <form class="properties-filters" method="GET" action="/properties">
