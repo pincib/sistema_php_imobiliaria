@@ -1,0 +1,45 @@
+{
+  "title": "Composição da dashboard de Leads",
+  "question": "Escolha a organização que torna o pipeline e a lista filtrada mais fáceis de consultar na rotina.",
+  "options": [
+    {
+      "id": "stage-snapshot",
+      "kind": "assigned",
+      "label": "Resumo do pipeline",
+      "kicker": "THE ROLL",
+      "lineage": "Composição de trabalho 6: resumo horizontal seguido da lista",
+      "thesis": "As três métricas aprovadas orientam o recorte da lista completa.",
+      "palette": ["#ffffff", "#111827", "#2563eb", "#6b7280"],
+      "materials": ["cartões de métrica", "tabela operacional"],
+      "viewport": "Filtros compactos no topo; três contagens de Proposta, Fechados e Perdidos; lista paginada abaixo.",
+      "risk": "A lista pode empurrar o contexto do pipeline para fora da primeira tela.",
+      "html": ".impeccable/mocks/decision/stage-snapshot.html"
+    },
+    {
+      "id": "stage-columns",
+      "kind": "dealt",
+      "label": "Etapas em colunas",
+      "lineage": "Composição de trabalho 7: categorias verticais junto à lista",
+      "thesis": "A seleção de etapa fica persistente enquanto a equipe percorre os registros.",
+      "palette": ["#ffffff", "#111827", "#2563eb", "#6b7280"],
+      "materials": ["navegação por etapa", "lista paginada"],
+      "viewport": "Filtros em faixa superior; seletor vertical com as três métricas e demais etapas; tabela ocupa o espaço restante.",
+      "risk": "O seletor lateral reduz a largura disponível para a tabela em notebooks.",
+      "html": ".impeccable/mocks/decision/stage-columns.html"
+    },
+    {
+      "id": "filtered-inbox",
+      "kind": "dealt",
+      "label": "Lista como ponto de partida",
+      "lineage": "Composição de trabalho 1: filtros e resultados em primeiro plano",
+      "thesis": "A busca e a lista conduzem o trabalho; o pipeline permanece visível como resumo compacto.",
+      "palette": ["#ffffff", "#111827", "#2563eb", "#6b7280"],
+      "materials": ["barra de filtros", "resumo segmentado"],
+      "viewport": "Filtros e busca primeiro; três contagens em uma faixa estreita; lista com responsável, etapa e criação.",
+      "risk": "As métricas podem parecer secundárias em uma página cujo objetivo inclui leitura gerencial do pipeline.",
+      "html": ".impeccable/mocks/decision/filtered-inbox.html"
+    }
+  ],
+  "reroll": {"registers": ["safer", "bolder"]},
+  "buildPath": {"value": "code", "toggle": true}
+}

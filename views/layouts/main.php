@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="/assets/css/pico.min.css">
     <link rel="stylesheet" href="/assets/css/app.css?v=<?= (int) filemtime(__DIR__ . '/../../public/assets/css/app.css') ?>">
     <script src="/assets/js/htmx.min.js"></script>
+    <script src="/assets/js/dashboard-partial-feedback.js?v=<?= (int) filemtime(__DIR__ . '/../../public/assets/js/dashboard-partial-feedback.js') ?>" defer></script>
     <script>
         // Configura HTMX para enviar o token CSRF automaticamente em todas as requisições AJAX
         document.addEventListener('DOMContentLoaded', function () {
@@ -56,9 +57,9 @@
                 </ul>
                 <ul class="app-primary-links">
                     <li><a href="/" class="<?= ($_SERVER['REQUEST_URI'] ?? '') === '/' ? 'active' : '' ?>">Dashboard</a></li>
-                    <li><a href="/leads" class="<?= str_starts_with($_SERVER['REQUEST_URI'] ?? '', '/leads') ? 'active' : '' ?>">Leads</a></li>
-                    <li><a href="/properties" class="<?= str_starts_with($_SERVER['REQUEST_URI'] ?? '', '/properties') ? 'active' : '' ?>">Imóveis</a></li>
-                    <li><a href="/owners" class="<?= str_starts_with($_SERVER['REQUEST_URI'] ?? '', '/owners') ? 'active' : '' ?>">Proprietários</a></li>
+                    <li><a href="/leads" class="<?= str_starts_with($_SERVER['REQUEST_URI'] ?? '', '/leads') || str_starts_with($_SERVER['REQUEST_URI'] ?? '', '/dashboard/leads') ? 'active' : '' ?>">Leads</a></li>
+                    <li><a href="/properties" class="<?= str_starts_with($_SERVER['REQUEST_URI'] ?? '', '/properties') || str_starts_with($_SERVER['REQUEST_URI'] ?? '', '/dashboard/properties') ? 'active' : '' ?>">Imóveis</a></li>
+                    <li><a href="/owners" class="<?= str_starts_with($_SERVER['REQUEST_URI'] ?? '', '/owners') || str_starts_with($_SERVER['REQUEST_URI'] ?? '', '/dashboard/owners') ? 'active' : '' ?>">Proprietários</a></li>
                     <li><a href="/signboards" class="<?= str_starts_with($_SERVER['REQUEST_URI'] ?? '', '/signboards') ? 'active' : '' ?>">Placas</a></li>
                     
                     <?php if (($currentUser['role'] ?? '') === 'admin'): ?>
@@ -93,6 +94,7 @@
     </header>
 
     <main class="container">
+        <p id="dashboard-async-status" class="dashboard-visually-hidden" role="status" aria-live="polite" aria-atomic="true"></p>
         <!-- Mensagens Flash de Sucesso / Erro / Informação -->
         <?php if (!empty($flashes)): ?>
             <section class="alerts-container">

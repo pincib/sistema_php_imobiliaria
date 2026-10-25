@@ -7,8 +7,10 @@ namespace App\Modules\Dashboard\Controllers;
 use App\Auth\AuthService;
 use App\Auth\Session\SessionManager;
 use App\Database\Connection;
+use App\Modules\Dashboard\Services\DashboardDataService;
 use App\Modules\Leads\Pipeline\PipelineManager;
 use App\Modules\Leads\Services\FollowUpService;
+use App\Modules\Properties\Services\PropertyService;
 use App\View\Renderer;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -17,13 +19,16 @@ final class DashboardController
 {
     private Renderer $renderer;
     private FollowUpService $followUpService;
+    private DashboardDataService $dashboardDataService;
 
     public function __construct(
         ?Renderer $renderer = null,
-        ?FollowUpService $followUpService = null
+        ?FollowUpService $followUpService = null,
+        ?DashboardDataService $dashboardDataService = null
     ) {
         $this->renderer = $renderer ?? new Renderer();
         $this->followUpService = $followUpService ?? new FollowUpService();
+        $this->dashboardDataService = $dashboardDataService ?? new DashboardDataService();
     }
 
     /**
@@ -33,6 +38,24 @@ final class DashboardController
     {
         $currentUser = AuthService::user() ?? [];
         $queryParams = $request->getQueryParams();
+
+        if ($request->hasHeader('HX-Request') && ($queryParams['partial'] ?? '') === 'management-summary') {
+            $summaryData = [
+                'summaryRetryUrl' => $this->dashboardLocation($request) . '#management-summary',
+            ];
+            try {
+                $summaryData['managementSummary'] = $this->dashboardDataService->principalSummary();
+                $summaryData['managementSummaryError'] = null;
+            } catch (\Throwable $exception) {
+                error_log('Dashboard management summary failed: ' . $exception->getMessage());
+                $summaryData['managementSummary'] = null;
+                $summaryData['managementSummaryError'] = 'Não foi possível carregar os indicadores gerenciais.';
+            }
+
+            $html = $this->renderer->render('dashboard/partials/management_summary', $summaryData, false);
+            $response->getBody()->write($html);
+            return $response;
+        }
 
         // Obtém dados de follow-up respeitando permissões de perfil
         $followUpData = $this->followUpService->getDashboardViewData($queryParams, $currentUser);
@@ -56,6 +79,7 @@ final class DashboardController
                 'active_sessions' => $activeSessions,
                 'audit_events' => $auditEventsCount,
             ],
+            'summaryRetryUrl' => $this->dashboardLocation($request) . '#management-summary',
         ]);
 
         // Se requisição HTMX para atualizar apenas o container da agenda de retornos
@@ -65,8 +89,70 @@ final class DashboardController
             return $response;
         }
 
+        // Keep the operational agenda and the other metrics available if a summary query fails.
+        try {
+            $viewData['managementSummary'] = $this->dashboardDataService->principalSummary();
+            $viewData['managementSummaryError'] = null;
+            $viewData['managementSummaryErrors'] = $viewData['managementSummary']['errors'];
+        } catch (\Throwable $exception) {
+            error_log('Dashboard management summary failed: ' . $exception->getMessage());
+            $viewData['managementSummary'] = null;
+            $viewData['managementSummaryError'] = 'Não foi possível carregar os indicadores gerenciais.';
+            $viewData['managementSummaryErrors'] = ['summary' => $viewData['managementSummaryError']];
+        }
+
         $html = $this->renderer->render('dashboard/index', $viewData);
         $response->getBody()->write($html);
+        return $response;
+    }
+
+    public function leads(Request $request, Response $response): Response
+    {
+        $query = $request->getQueryParams();
+        $data = array_merge($this->dashboardDataService->leadsDashboard($query), [
+            'title' => 'Análise de Leads',
+            'user' => AuthService::user() ?? [],
+            'stages' => PipelineManager::STAGES,
+            'getStageBadge' => [PipelineManager::class, 'getBadgeClass'],
+            'getStageLabel' => [PipelineManager::class, 'getLabel'],
+            'queryParams' => $query,
+        ]);
+        $template = $request->hasHeader('HX-Request') ? 'dashboard/partials/leads_content' : 'dashboard/leads';
+        $response->getBody()->write($this->renderer->render($template, $data, $request->hasHeader('HX-Request') ? false : 'layouts/main'));
+        return $response;
+    }
+
+    public function properties(Request $request, Response $response): Response
+    {
+        $query = $request->getQueryParams();
+        $data = array_merge($this->dashboardDataService->propertiesDashboard($query), [
+            'title' => 'Análise de Imóveis',
+            'user' => AuthService::user() ?? [],
+            'stages' => PipelineManager::STAGES,
+            'types' => PropertyService::TYPES,
+            'statuses' => PropertyService::STATUSES,
+            'getStageBadge' => [PipelineManager::class, 'getBadgeClass'],
+            'getStageLabel' => [PipelineManager::class, 'getLabel'],
+            'queryParams' => $query,
+        ]);
+        $template = $request->hasHeader('HX-Request') ? 'dashboard/partials/properties_content' : 'dashboard/properties';
+        $response->getBody()->write($this->renderer->render($template, $data, $request->hasHeader('HX-Request') ? false : 'layouts/main'));
+        return $response;
+    }
+
+    public function owners(Request $request, Response $response): Response
+    {
+        $query = $request->getQueryParams();
+        $data = array_merge($this->dashboardDataService->ownersDashboard($query), [
+            'title' => 'Análise de Proprietários',
+            'user' => AuthService::user() ?? [],
+            'types' => PropertyService::TYPES,
+            'statuses' => PropertyService::STATUSES,
+            'intentions' => PropertyService::INTENTIONS,
+            'queryParams' => $query,
+        ]);
+        $template = $request->hasHeader('HX-Request') ? 'dashboard/partials/owners_content' : 'dashboard/owners';
+        $response->getBody()->write($this->renderer->render($template, $data, $request->hasHeader('HX-Request') ? false : 'layouts/main'));
         return $response;
     }
 

@@ -139,6 +139,9 @@ final class Application
             $group->post('/logout', [AuthController::class, 'logout'])->add(new CsrfMiddleware());
 
             $group->get('/', [DashboardController::class, 'index']);
+            $group->get('/dashboard/leads', [DashboardController::class, 'leads']);
+            $group->get('/dashboard/properties', [DashboardController::class, 'properties']);
+            $group->get('/dashboard/owners', [DashboardController::class, 'owners']);
             $group->get('/reports', [ReportsController::class, 'index'])->add(new RoleMiddleware(['admin']));
             $group->get('/reports/export.csv', [ReportsController::class, 'export'])->add(new RoleMiddleware(['admin']));
             $group->post('/follow-ups/{id:[0-9]+}/complete', [DashboardController::class, 'completeFollowUp'])->add(new CsrfMiddleware());

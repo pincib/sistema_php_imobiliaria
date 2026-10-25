@@ -1,14 +1,14 @@
-<header style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+<header class="dashboard-home-header">
     <div>
-        <h1 style="margin-bottom: 0.25rem;">Painel de Controle</h1>
-        <p style="color: var(--pico-muted-color); margin: 0; font-size: 0.95rem;">
+        <h1>Painel de Controle</h1>
+        <p class="dashboard-home-meta">
             Olá, <strong><?= $e($user['name']) ?></strong>! Você está autenticado como 
             <span class="badge badge-<?= $e($user['role']) ?>"><?= $e($user['role_label']) ?></span>.
             &bull; <?= $e(date('d/m/Y')) ?>
         </p>
     </div>
     <div>
-        <a href="/leads/new" role="button" class="primary" style="display: inline-flex; align-items: center; gap: 0.4rem;">
+        <a href="/leads/new" role="button" class="primary dashboard-new-lead">
             + Novo Lead
         </a>
     </div>
@@ -17,11 +17,11 @@
 <!-- =======================================================================
      SEÇÃO CENTRAL: AGENDA DIÁRIA DE RETORNOS E FOLLOW-UPS
      ======================================================================= -->
-<section style="margin-bottom: 2.5rem;">
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
+<section class="dashboard-home-agenda">
+    <div class="dashboard-home-section-heading">
         <div>
-            <h2 style="margin: 0; font-size: 1.35rem;">Agenda Operacional de Follow-ups</h2>
-            <p style="color: var(--pico-muted-color); font-size: 0.85rem; margin: 0;">
+            <h2>Agenda Operacional de Follow-ups</h2>
+            <p>
                 Priorize contatos em atraso e organize seus retornos programados para não perder negociações.
             </p>
         </div>
@@ -31,11 +31,13 @@
     <?php require __DIR__ . '/partials/follow_ups_container.php'; ?>
 </section>
 
+<p class="dashboard-loading htmx-indicator" id="management-summary-loading" role="status">Atualizando resumo gerencial…</p>
+<?php require __DIR__ . '/partials/management_summary.php'; ?>
 <!-- =======================================================================
      SEÇÃO DE INDICADORES GERAIS DA OPERAÇÃO (Personalizados por Papel)
      ======================================================================= -->
 <?php if (($user['role'] ?? '') === 'admin'): ?>
-    <div class="grid" style="margin-bottom: 2.5rem;">
+    <div class="grid dashboard-home-admin-stats">
         <div class="stat-card">
             <h3><?= $e((string)($stats['total_leads'] ?? 0)) ?></h3>
             <p>Leads no Funil</p>
@@ -55,7 +57,7 @@
     </div>
 <?php endif; ?>
 
-<section style="margin-bottom: 2rem;">
+<section class="dashboard-home-modules">
     <h2>Módulos do Sistema</h2>
     <div class="grid">
         <article>
@@ -85,7 +87,7 @@
 </section>
 
 <?php if (($user['role'] ?? '') === 'admin'): ?>
-    <section>
+    <section class="dashboard-home-administration">
         <h2>Administração e Governança</h2>
         <div class="grid">
             <article>
