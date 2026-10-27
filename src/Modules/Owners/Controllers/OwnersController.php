@@ -102,8 +102,18 @@ final class OwnersController
         if(!in_array($rule,$allowed,true)||$message===''||!$validEncoding||mb_strlen($message)>4000||$hasControlCharacters||!isset($results[$result])) {
             SessionManager::flash('error','Não foi possível registrar: revise régua, mensagem válida (até 4.000 caracteres) e resultado.');
         } else {
-            $s=$this->pdo()->prepare('INSERT INTO whatsapp_contact_logs(contact_type,contact_id,rule,message,result,user_id) VALUES(\'owner\',:id,:rule,:message,:result,:user)');
-            $s->execute([':id'=>$id,':rule'=>$rule,':message'=>$message,':result'=>$results[$result],':user'=>(int)(AuthService::user()['id']??0)]);
+            $actor=(int)(AuthService::user()['id']??0);
+            Connection::transaction(function(\PDO $pdo) use ($id,$rule,$message,$result,$results,$actor): void {
+                $s=$pdo->prepare('INSERT INTO whatsapp_contact_logs(contact_type,contact_id,rule,message,result,user_id) VALUES(\'owner\',:id,:rule,:message,:result,:user)');
+                $s->execute([':id'=>$id,':rule'=>$rule,':message'=>$message,':result'=>$results[$result],':user'=>$actor]);
+                if ($result==='confirmed') {
+                    $s=$pdo->prepare('SELECT contact_stage FROM owners WHERE id=:id'); $s->execute([':id'=>$id]); $old=$s->fetchColumn();
+                    if ($old!=='contatado') {
+                        $s=$pdo->prepare("UPDATE owners SET contact_stage='contatado', import_batch_id=NULL, updated_at=CURRENT_TIMESTAMP WHERE id=:id"); $s->execute([':id'=>$id]);
+                        \App\Audit\AuditService::log('owner.contact_stage_change','owner',(string)$id,['contact_stage'=>$old],['contact_stage'=>'contatado','source'=>'whatsapp'], $actor);
+                    }
+                }
+            });
             SessionManager::flash('success','Resultado registrado no histórico.');
         }
         return $response->withHeader('Location','/owners/'.$id.'/whatsapp')->withStatus(302);

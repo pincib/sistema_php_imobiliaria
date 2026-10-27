@@ -1,3 +1,4 @@
+<div class="kanban-entry"><a href="/kanban/leads" role="button" class="outline secondary">Ver quadro Kanban</a> <a href="/contacts/invalid">Contatos inválidos</a></div>
 <?php
 /**
  * @var list<array<string, mixed>> $leads

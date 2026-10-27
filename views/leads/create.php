@@ -120,28 +120,6 @@
                 </div>
             </div>
 
-            <!-- Observações e Preferências do Lead -->
-                <label for="notes">
-                Observações Iniciais / Perfil de Interesse
-                <textarea id="notes" 
-                          name="notes" 
-                          rows="3" maxlength="4000"
-                          placeholder="Ex: Busca apartamento de 2 quartos em Icaraí, orçamento até 500 mil..." aria-invalid="<?= !empty($errors['notes']) ? 'true' : 'false' ?>" <?= !empty($errors['notes']) ? 'aria-describedby="notes-error"' : '' ?>><?= $e($values['notes'] ?? '') ?></textarea>
-            </label>
-            <?php if (!empty($errors['notes'])): ?><span id="notes-error" class="field-error-text" role="alert"><?= $e($errors['notes']) ?></span><?php endif; ?>
-
-            <!-- Agendamento Opcional do Primeiro Follow-up -->
-            <label for="next_follow_up_at" style="margin-top: 1rem;">
-                Agendar Primeiro Retorno (Follow-up)
-                <input type="datetime-local" 
-                       id="next_follow_up_at" 
-                       name="next_follow_up_at" 
-                       value="<?= $e($values['next_follow_up_at'] ?? '') ?>">
-                <small style="display: block; color: var(--pico-muted-color); font-size: 0.75rem;">
-                    Opcional: Defina a data/hora para o primeiro contato para aparecer na fila da Dashboard.
-                </small>
-            </label>
-
             <!-- Ações -->
             <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.5rem;">
                 <a href="/leads" role="button" class="outline secondary">Cancelar</a>

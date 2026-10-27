@@ -46,6 +46,8 @@ $isLost = $currentStage === 'perdido';
 $isAdmin = ($currentUser['role'] ?? '') === 'admin';
 $cleanPhone = preg_replace('/\D+/', '', $lead['phone'] ?? '') ?? '';
 ?>
+<section class="contact-label-section"><form method="post" action="/contacts/leads/<?= (int)$lead['id'] ?>/invalid"><?= $csrfField ?><input type="hidden" name="invalid_contact" value="<?= $lead['invalid_contact']?'0':'1' ?>"><input type="hidden" name="return_to" value="/leads/<?= (int)$lead['id'] ?>"><?php if($lead['invalid_contact']): ?><strong class="kanban-invalid">Contato inválido</strong> <?php endif ?><button class="outline secondary" type="submit"><?= $lead['invalid_contact']?'Remover rótulo de contato inválido':'Marcar contato inválido' ?></button></form></section>
+
 
 <!-- Navegação e Cabeçalho do Lead -->
 <div class="lead-page-header" style="margin-bottom: 1.5rem;">

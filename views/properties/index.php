@@ -1,3 +1,4 @@
+<div class="kanban-entry"><a href="/kanban/properties" role="button" class="outline secondary">Ver quadro Kanban</a></div>
 <?php
 /** @var list<array<string,mixed>> $properties */
 ?>

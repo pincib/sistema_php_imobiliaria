@@ -20,6 +20,7 @@ use App\Modules\Leads\Controllers\LeadImportController;
 use App\Modules\Leads\Controllers\LeadsController;
 use App\Modules\Properties\Controllers\PropertiesController;
 use App\Modules\Owners\Controllers\OwnersController;
+use App\Modules\Kanban\Controllers\KanbanController;
 use App\Modules\Reports\Controllers\ReportsController;
 use App\Modules\Signboards\Controllers\SignboardsController;
 use App\View\Renderer;
@@ -158,6 +159,10 @@ final class Application
                 $importGroup->post('/cancel', [LeadImportController::class, 'cancel'])->add(new CsrfMiddleware());
             })->add(new RoleMiddleware(['admin']));
 
+            $group->get('/kanban/{type:leads|properties|owners}', [KanbanController::class, 'board']);
+            $group->post('/kanban/{type:leads|properties|owners}/{id:[0-9]+}', [KanbanController::class, 'move'])->add(new CsrfMiddleware());
+            $group->get('/contacts/invalid', [KanbanController::class, 'invalid']);
+            $group->post('/contacts/{type:leads|owners}/{id:[0-9]+}/invalid', [KanbanController::class, 'label'])->add(new CsrfMiddleware());
             $group->get('/leads', [LeadsController::class, 'index']);
             $group->get('/leads/new', [LeadsController::class, 'create']);
             $group->post('/leads', [LeadsController::class, 'store'])->add(new CsrfMiddleware());
