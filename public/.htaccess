@@ -8,6 +8,13 @@
 # Impede listagem de diretório
 Options -Indexes
 
+# Assets são públicos; páginas e respostas autenticadas mantêm sua própria política de cache.
+<IfModule mod_headers.c>
+    <FilesMatch "\.(css|js)$">
+        Header set Cache-Control "public, max-age=3600"
+    </FilesMatch>
+</IfModule>
+
 # Bloqueia acesso direto a arquivos ocultos ou sensíveis
 <FilesMatch "^\.">
     <IfModule mod_authz_core.c>

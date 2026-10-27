@@ -8,8 +8,8 @@ RUN apt-get update && apt-get install -y \
     libsqlite3-dev \
     git \
     unzip \
-    && docker-php-ext-install pdo pdo_sqlite \
-    && a2enmod rewrite \
+    && docker-php-ext-install pdo pdo_sqlite opcache \
+    && a2enmod rewrite headers deflate \
     && rm -rf /var/lib/apt/lists/*
 
 # Configure Apache DocumentRoot to point to /var/www/html/public

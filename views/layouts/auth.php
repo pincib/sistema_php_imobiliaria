@@ -6,8 +6,8 @@
     <meta name="csrf-token" content="<?= $e($csrfToken) ?>">
     <title><?= $e($title ?? 'Entrar — Plataforma Pinciara') ?></title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏢</text></svg>">
-    <link rel="stylesheet" href="/assets/css/pico.min.css">
-    <link rel="stylesheet" href="/assets/css/app.css">
+    <link rel="stylesheet" href="/assets/css/pico.min.css?v=<?= (int) filemtime(__DIR__ . '/../../public/assets/css/pico.min.css') ?>">
+    <link rel="stylesheet" href="/assets/css/app.css?v=<?= (int) filemtime(__DIR__ . '/../../public/assets/css/app.css') ?>">
 </head>
 <body>
     <div class="auth-wrapper">

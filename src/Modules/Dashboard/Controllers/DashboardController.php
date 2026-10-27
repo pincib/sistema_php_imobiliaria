@@ -60,25 +60,12 @@ final class DashboardController
         // Obtém dados de follow-up respeitando permissões de perfil
         $followUpData = $this->followUpService->getDashboardViewData($queryParams, $currentUser);
 
-        // Estatísticas gerais
-        $pdo = Connection::getPdo();
-        $userCount = (int)$pdo->query('SELECT COUNT(*) FROM users WHERE is_active = 1')->fetchColumn();
-        $activeSessions = (int)$pdo->query('SELECT COUNT(*) FROM sessions WHERE last_activity >= ' . (time() - 28800))->fetchColumn();
-        $auditEventsCount = (int)$pdo->query('SELECT COUNT(*) FROM audit_logs')->fetchColumn();
-        $totalLeads = (int)$pdo->query('SELECT COUNT(*) FROM leads')->fetchColumn();
-
         $viewData = array_merge($followUpData, [
             'title' => 'Dashboard Operacional — Agenda de Retornos & Pipeline',
             'user' => $currentUser,
             'stages' => PipelineManager::STAGES,
             'getStageBadge' => [PipelineManager::class, 'getBadgeClass'],
             'getStageLabel' => [PipelineManager::class, 'getLabel'],
-            'stats' => [
-                'total_leads' => $totalLeads,
-                'active_users' => $userCount,
-                'active_sessions' => $activeSessions,
-                'audit_events' => $auditEventsCount,
-            ],
             'summaryRetryUrl' => $this->dashboardLocation($request) . '#management-summary',
         ]);
 
@@ -87,6 +74,17 @@ final class DashboardController
             $html = $this->renderer->render('dashboard/partials/follow_ups_container', $viewData, false);
             $response->getBody()->write($html);
             return $response;
+        }
+
+        // Esses indicadores só aparecem na página completa para administradores.
+        if (($currentUser['role'] ?? '') === 'admin') {
+            $pdo = Connection::getPdo();
+            $viewData['stats'] = [
+                'total_leads' => (int)$pdo->query('SELECT COUNT(*) FROM leads')->fetchColumn(),
+                'active_users' => (int)$pdo->query('SELECT COUNT(*) FROM users WHERE is_active = 1')->fetchColumn(),
+                'active_sessions' => (int)$pdo->query('SELECT COUNT(*) FROM sessions WHERE last_activity >= ' . (time() - 28800))->fetchColumn(),
+                'audit_events' => (int)$pdo->query('SELECT COUNT(*) FROM audit_logs')->fetchColumn(),
+            ];
         }
 
         // Keep the operational agenda and the other metrics available if a summary query fails.

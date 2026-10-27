@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="csrf-token" content="<?= $e($csrfToken) ?>">
     <title><?= $e($title ?? 'CRM Imobiliário') ?></title>
-    <link rel="stylesheet" href="/assets/css/pico.min.css">
+    <link rel="stylesheet" href="/assets/css/pico.min.css?v=<?= (int) filemtime(__DIR__ . '/../../public/assets/css/pico.min.css') ?>">
     <link rel="stylesheet" href="/assets/css/app.css?v=<?= (int) filemtime(__DIR__ . '/../../public/assets/css/app.css') ?>">
-    <script src="/assets/js/htmx.min.js"></script>
+    <script src="/assets/js/htmx.min.js?v=<?= (int) filemtime(__DIR__ . '/../../public/assets/js/htmx.min.js') ?>" defer></script>
     <script src="/assets/js/dashboard-partial-feedback.js?v=<?= (int) filemtime(__DIR__ . '/../../public/assets/js/dashboard-partial-feedback.js') ?>" defer></script>
     <script>
         // Configura HTMX para enviar o token CSRF automaticamente em todas as requisições AJAX
