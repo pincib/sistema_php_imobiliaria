@@ -200,6 +200,7 @@ final class Application
             $group->post('/owners/{id:[0-9]+}', [OwnersController::class, 'update'])->add(new CsrfMiddleware());
             $group->post('/owners/{id:[0-9]+}/properties', [OwnersController::class, 'associate'])->add(new CsrfMiddleware());
             $group->post('/owners/{id:[0-9]+}/properties/{propertyId:[0-9]+}/delete', [OwnersController::class, 'disassociate'])->add(new CsrfMiddleware());
+            $group->post('/owners/{id:[0-9]+}/verify', [OwnersController::class, 'markVerified'])->add(new CsrfMiddleware());
             $group->get('/owners/{id:[0-9]+}/whatsapp', [OwnersController::class, 'whatsapp']);
             $group->post('/owners/{id:[0-9]+}/whatsapp', [OwnersController::class, 'saveWhatsappResult'])->add(new CsrfMiddleware());
             $group->get('/signboards', [SignboardsController::class, 'index']);
